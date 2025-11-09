@@ -11,7 +11,7 @@ public class Despesa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "despesa_id")
-    private Long id;
+    private int id;
 
     @Column(name = "valor", nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
@@ -33,7 +33,7 @@ public class Despesa {
     public Despesa() {
     }
 
-    public Despesa(Long id, BigDecimal valor, LocalDate data, String descricao, Usuario usuario, Categoria categoria) {
+    public Despesa(int id, BigDecimal valor, LocalDate data, String descricao, Usuario usuario, Categoria categoria) {
         this.id = id;
         this.valor = valor;
         this.data = data;
@@ -42,11 +42,11 @@ public class Despesa {
         this.categoria = categoria;
     }
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -90,4 +90,3 @@ public class Despesa {
         this.categoria = categoria;
     }
 }
-
