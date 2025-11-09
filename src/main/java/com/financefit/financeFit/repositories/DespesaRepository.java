@@ -1,0 +1,17 @@
+package com.financefit.financeFit.repositories;
+
+import com.financefit.financeFit.entities.Despesa;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.math.BigDecimal;
+
+public interface DespesaRepository extends JpaRepository<Despesa, Long> {
+    @Query("SELECT SUM(d.valor) FROM Despesa d WHERE d.usuario.id = :idUsuario AND MONTH(d.data) = :mes AND YEAR(d.data) = :ano")
+    BigDecimal calcularTotalGastoNoMes(
+            @Param("idUsuario") Long idUsuario,
+            @Param("mes") int mes,
+            @Param("ano") int ano
+    );
+}
