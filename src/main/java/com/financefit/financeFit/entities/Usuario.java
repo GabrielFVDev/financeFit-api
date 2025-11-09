@@ -1,25 +1,37 @@
 package com.financefit.financeFit.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "usuario")
 public class Usuario {
-    private int id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "usuario_id")
+    private int userId;
+
+    @Column(name = "nome", nullable = false)
     private String nome;
+
+    @Column(name = "email", unique = true)
     private String email;
+
+    @Column(name = "senha", nullable = false)
     private String senha;
+
+    @Column(name = "dataCriacao", nullable = false)
     private LocalDate dataCriacao;
+
+    @Column(name = "metaMensal")
     private double metaMensal;
 
     public Usuario() {
     }
 
-    public Usuario(int id, String nome, String email, String senha, LocalDate dataCriacao, double metaMensal) {
-        this.id = id;
+    public Usuario(int userId, String nome, String email, String senha, LocalDate dataCriacao, double metaMensal) {
+        this.userId = userId;
         this.nome = nome;
         this.email = email;
         this.senha = senha;
@@ -27,12 +39,12 @@ public class Usuario {
         this.metaMensal = metaMensal;
     }
 
-    public int getId() {
-        return id;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     public String getNome() {

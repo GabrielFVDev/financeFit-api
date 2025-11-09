@@ -1,28 +1,32 @@
 package com.financefit.financeFit.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "categoria")
 public class Categoria {
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "categoria_id")
+    private int categoriaId;
+
+    @Column(name = "nome", nullable = false)
     private String nome;
 
     public Categoria() {
     }
 
-    public Categoria(int id, String nome) {
-        this.id = id;
+    public Categoria(int categoriaId, String nome) {
+        this.categoriaId = categoriaId;
         this.nome = nome;
     }
 
-    public int getId() {
-        return id;
+    public int getCategoriaId() {
+        return categoriaId;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setCategoriaId(int categoriaId) {
+        this.categoriaId = categoriaId;
     }
 
     public String getNome() {
