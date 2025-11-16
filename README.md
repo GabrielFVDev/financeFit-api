@@ -1,6 +1,17 @@
 # FinanceFit API 💰
 
-API RESTful para controle de finanças pessoais desenvolvida com Spring Boot.
+API RESTful para controle de finanças pessoais desenvolvida com Spring Boot com autenticação JWT.
+
+## 🏗️ Tecnologias
+
+- **Java 17**
+- **Spring Boot 3.5.7**
+- **Spring Security 6.x**
+- **JWT (JSON Web Token)**
+- **JPA/Hibernate**
+- **MySQL 8.0**
+- **Maven**
+- **Bean Validation**
 
 ## 📋 Pré-requisitos
 
@@ -20,24 +31,40 @@ cd financeFit
 
 ### 2. Configure o banco de dados
 
-Edite o arquivo `src/main/resources/application.properties`:
+**Crie o banco de dados no MySQL:**
+```sql
+CREATE DATABASE financefit;
+```
+
+**Configure o arquivo `src/main/resources/application.properties`:**
 
 ```properties
-# Configuração do banco de dados
-spring.datasource.url=jdbc:mysql://localhost:3306/financefit?createDatabaseIfNotExist=true
-spring.datasource.username=seu_usuario
-spring.datasource.password=sua_senha
+spring.application.name=financeFit
+
+# Configuracao do banco de dados
+spring.datasource.url=jdbc:mysql://localhost:3306/financefit
+spring.datasource.username=root
+spring.datasource.password=sua_senha_aqui
 
 # JPA/Hibernate
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+# JWT Configuration
+jwt.secret=financefit_secret_key_2025_muito_segura_e_complexa_para_producao_mudar_isso
+jwt.expiration=86400000
 ```
+
+⚠️ **IMPORTANTE**: 
+- Altere `sua_senha_aqui` pela senha do seu MySQL
+- Em produção, altere a `jwt.secret` para uma chave mais segura
 
 ### 3. Execute o projeto
 
 #### Usando Maven Wrapper (Linux/Mac):
 ```bash
+chmod +x mvnw
 ./mvnw spring-boot:run
 ```
 
@@ -57,48 +84,312 @@ A API estará disponível em: `http://localhost:8080`
 
 ---
 
-## 📚 Documentação da API
+## 🔐 Autenticação JWT
 
-### 👤 Usuários (`/usuarios`)
+A API utiliza JWT (JSON Web Token) para autenticação. Todas as rotas, exceto as de autenticação, requerem um token válido.
 
-#### Criar usuário
+### 📍 Endpoints de Autenticação (Públicos)
+
+#### 🔓 Registrar usuário
 ```http
-POST /usuarios
+POST /api/auth/register
 Content-Type: application/json
 
 {
   "nome": "João Silva",
   "email": "joao@email.com",
+  "senha": "senha123",
+  "metaMensal": 5000.00
+}
+```
+
+**Resposta (200 OK):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "tipo": "Bearer",
+  "email": "joao@email.com",
+  "nome": "João Silva"
+}
+```
+
+#### 🔓 Login
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@email.com",
   "senha": "senha123"
 }
 ```
 
-**Resposta (201 Created):**
+**Resposta (200 OK):**
 ```json
 {
-  "id": 1,
-  "nome": "João Silva",
-  "email": "joao@email.com"
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "tipo": "Bearer",
+  "email": "joao@email.com",
+  "nome": "João Silva"
 }
 ```
 
-**Resposta de Erro (400 Bad Request):**
-```json
-{
-  "status": 400,
-  "message": "Erro de validação",
-  "errors": {
-    "email": "deve ser um endereço de e-mail válido",
-    "senha": "tamanho deve estar entre 6 e 20"
-  },
-  "timestamp": "2025-11-09T10:30:00"
-}
+---
+
+## 📚 Endpoints Protegidos (Requerem Token)
+
+**Para acessar os endpoints abaixo, inclua o token no header:**
 ```
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
+
+### 👤 Usuários
 
 #### Listar todos os usuários
 ```http
-GET /usuarios
+GET /api/usuarios
+Authorization: Bearer {seu_token}
 ```
+
+#### Buscar usuário por ID
+```http
+GET /api/usuarios/{id}
+Authorization: Bearer {seu_token}
+```
+
+#### Atualizar usuário
+```http
+PUT /api/usuarios/{id}
+Authorization: Bearer {seu_token}
+Content-Type: application/json
+
+{
+  "nome": "João Silva Santos",
+  "email": "joao.santos@email.com",
+  "senha": "novaSenha123"
+}
+```
+
+#### Deletar usuário
+```http
+DELETE /api/usuarios/{id}
+Authorization: Bearer {seu_token}
+```
+
+### 🏷️ Categorias
+
+#### Listar categorias
+```http
+GET /api/categorias
+Authorization: Bearer {seu_token}
+```
+
+#### Criar categoria
+```http
+POST /api/categorias
+Authorization: Bearer {seu_token}
+Content-Type: application/json
+
+{
+  "nome": "Alimentação",
+  "descricao": "Gastos com alimentação"
+}
+```
+
+### 💸 Despesas
+
+#### Listar despesas
+```http
+GET /api/despesas
+Authorization: Bearer {seu_token}
+```
+
+#### Criar despesa
+```http
+POST /api/despesas
+Authorization: Bearer {seu_token}
+Content-Type: application/json
+
+{
+  "descricao": "Almoço",
+  "valor": 25.50,
+  "data": "2025-11-15",
+  "categoriaId": 1,
+  "usuarioId": 1
+}
+```
+
+---
+
+## 🧪 Testando a API
+
+### 1. **Teste com cURL**
+
+**Registrar usuário:**
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "Test User",
+    "email": "test@example.com", 
+    "senha": "123456",
+    "metaMensal": 3000.0
+  }'
+```
+
+**Login:**
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "senha": "123456"
+  }'
+```
+
+**Usar token (substitua `SEU_TOKEN` pelo token recebido):**
+```bash
+curl -X GET http://localhost:8080/api/usuarios \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### 2. **Teste com Postman**
+
+1. Importe a collection (se disponível)
+2. Configure o ambiente com a URL base: `http://localhost:8080`
+3. Faça login e copie o token
+4. Adicione o token no header `Authorization` como `Bearer {token}`
+
+---
+
+## 🛠️ Resolução de Problemas
+
+### ❌ Erro: "Access denied for user 'root'@'localhost'"
+
+**Causa**: Credenciais do MySQL incorretas.
+
+**Solução**:
+```bash
+# 1. Verifique se o MySQL está rodando
+sudo systemctl status mysql
+
+# 2. Teste a conexão
+mysql -u root -p
+
+# 3. Atualize as credenciais em application.properties
+```
+
+### ❌ Erro: "Unknown database 'financefit'"
+
+**Causa**: Banco de dados não existe.
+
+**Solução**:
+```sql
+-- Conecte no MySQL e execute:
+CREATE DATABASE financefit;
+```
+
+### ❌ Erro: "Port 8080 is already in use"
+
+**Causa**: Porta 8080 já está sendo usada.
+
+**Solução**:
+```bash
+# Opção 1: Mate o processo na porta 8080
+sudo kill -9 $(sudo lsof -t -i:8080)
+
+# Opção 2: Use outra porta em application.properties
+server.port=8081
+```
+
+### ❌ Erro: "Invalid JWT token"
+
+**Causa**: Token expirado ou inválido.
+
+**Solução**:
+1. Faça login novamente para obter um novo token
+2. Verifique se está incluindo "Bearer " antes do token
+3. Token expira em 24 horas por padrão
+
+### ❌ Erro: "Java 17 or higher required"
+
+**Causa**: Versão do Java incompatível.
+
+**Solução**:
+```bash
+# Verifique a versão do Java
+java -version
+
+# Instale o Java 17 (Ubuntu/Debian)
+sudo apt install openjdk-17-jdk
+
+# Configure JAVA_HOME
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+```
+
+### ❌ Erro de Compilação
+
+**Causa**: Dependências ou código com problemas.
+
+**Solução**:
+```bash
+# Limpe e recompile
+./mvnw clean compile
+
+# Se persistir, limpe o cache do Maven
+rm -rf ~/.m2/repository
+./mvnw clean compile
+```
+
+---
+
+## 🔒 Segurança
+
+- **Senhas**: Criptografadas com BCrypt
+- **JWT**: Tokens assinados com chave secreta
+- **Validação**: Bean Validation em todos os DTOs
+- **CORS**: Configure conforme necessário para produção
+- **HTTPS**: Recomendado para produção
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+src/main/java/com/financefit/financeFit/
+├── controllers/          # Endpoints da API
+├── dtos/                # Data Transfer Objects
+├── entities/            # Entidades JPA
+├── repositories/        # Repositórios de dados
+├── security/           # Configuração JWT e Security
+├── services/           # Lógica de negócio
+└── exception/          # Tratamento de exceções
+```
+
+---
+
+## 👥 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
+
+---
+
+## 📄 Licença
+
+Este projeto está sob a licença [MIT](LICENSE).
+
+---
+
+## 📞 Suporte
+
+Em caso de dúvidas ou problemas:
+1. Verifique a seção de **Resolução de Problemas**
+2. Consulte os logs da aplicação
+3. Abra uma issue no repositório
 
 **Resposta (200 OK):**
 ```json
