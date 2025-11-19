@@ -2,6 +2,7 @@ package com.financefit.financeFit.services;
 
 import com.financefit.financeFit.entities.Usuario;
 import com.financefit.financeFit.repositories.DespesaRepository;
+import com.financefit.financeFit.repositories.ReceitaRepository;
 import com.financefit.financeFit.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class UsuarioService {
 
     @Autowired
     private DespesaRepository despesaRepository;
+
+    @Autowired
+    private ReceitaRepository receitaRepository; // Injetar ReceitaRepository
 
     public Usuario buscarPorId(int id) {
         return usuarioRepository.findById(id)
@@ -91,9 +95,16 @@ public class UsuarioService {
                 ano
         );
 
+        BigDecimal totalReceita = receitaRepository.calcularTotalReceitaNoMes( // Calcular total de receitas
+                idUsuario,
+                mes,
+                ano
+        );
+
         Usuario usuario = buscarPorId(idUsuario);
 
         if (totalGasto == null) totalGasto = BigDecimal.ZERO;
+        if (totalReceita == null) totalReceita = BigDecimal.ZERO; // Tratar caso de receita nula
 
         BigDecimal metaMensal = BigDecimal.valueOf(usuario.getMetaMensal());
         BigDecimal percentual;
@@ -106,13 +117,17 @@ public class UsuarioService {
                     .multiply(BigDecimal.valueOf(100));
         }
 
+        BigDecimal saldo = totalReceita.subtract(totalGasto); // Calcular saldo
+
         String status = percentual.compareTo(BigDecimal.valueOf(80)) >= 0
                 ? "ALERTA: Próximo do limite!"
                 : "OK";
 
         Map<String, Object> resumo = new HashMap<>();
         resumo.put("totalGasto", totalGasto);
+        resumo.put("totalReceita", totalReceita); // Adicionar totalReceita ao resumo
         resumo.put("metaMensal", metaMensal);
+        resumo.put("saldo", saldo); // Adicionar saldo ao resumo
         resumo.put("percentualUsado", percentual);
         resumo.put("statusMeta", status);
         resumo.put("mes", mes);

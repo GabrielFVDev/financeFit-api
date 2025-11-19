@@ -1,0 +1,326 @@
+{
+  "info": {
+    "name": "FinanceFit API",
+    "description": "Collection completa da API FinanceFit para gerenciamento de finanças pessoais",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Registrar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao@email.com\",\n  \"senha\": \"senha123\",\n  \"metaMensal\": 2000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@email.com\",\n  \"senha\": \"senha123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "item": [
+        {
+          "name": "Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios"]
+            }
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1"]
+            }
+          }
+        },
+        {
+          "name": "Buscar por email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/email/joao@email.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "email", "joao@email.com"]
+            }
+          }
+        },
+        {
+          "name": "Criar usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Maria Santos\",\n  \"email\": \"maria@email.com\",\n  \"senha\": \"senha456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva Atualizado\",\n  \"email\": \"joao.novo@email.com\",\n  \"senha\": \"novaSenha123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1"]
+            }
+          }
+        },
+        {
+          "name": "Deletar usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1"]
+            }
+          }
+        },
+        {
+          "name": "Alterar senha",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senha\": \"novaSenha789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1/senha",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1", "senha"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar meta mensal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metaMensal\": 3000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1/meta",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1", "meta"]
+            }
+          }
+        },
+        {
+          "name": "Resumo financeiro geral",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1/resumo",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1", "resumo"]
+            }
+          }
+        },
+        {
+          "name": "Resumo financeiro por período",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1/resumo/11/2025",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "1", "resumo", "11", "2025"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categorias",
+      "item": [
+        {
+          "name": "Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": ["{{baseUrl}}"],
+              "path": ["categorias"]
+            }
+          }
+        },
+        {
+          "name": "Criar categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Alimentação\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": ["{{baseUrl}}"],
+              "path": ["categorias"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Despesas",
+      "item": [
+        {
+          "name": "Criar despesa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valor\": 150.50,\n  \"data\": \"2025-11-16\",\n  \"descricao\": \"Compras no supermercado\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/despesas?idUsuario=1&idCategoria=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["despesas"],
+              "query": [
+                {
+                  "key": "idUsuario",
+                  "value": "1"
+                },
+                {
+                  "key": "idCategoria",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar despesas do usuário",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/despesas/usuario/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["despesas", "usuario", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+

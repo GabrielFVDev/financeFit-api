@@ -5,12 +5,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "despesa")
-public class Despesa {
+@Table(name = "receita")
+public class Receita {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "despesa_id")
+    @Column(name = "receita_id")
     private int id;
 
     @Column(name = "valor", nullable = false, precision = 10, scale = 2)
@@ -27,24 +27,24 @@ public class Despesa {
     private Usuario usuario;
 
     @ManyToOne
-    @JoinColumn(name = "categoria_id", nullable = false)
+    @JoinColumn(name = "categoria_id") // Categoria is optional for income
     private Categoria categoria;
 
     @Enumerated(EnumType.STRING) // Adicionar esta anotação para mapear o enum para String no banco
     @Column(name = "tipo", nullable = false)
-    private TipoTransacao tipo = TipoTransacao.DESPESA; // Definir DESPESA como padrão
+    private TipoTransacao tipo = TipoTransacao.RECEITA; // Definir RECEITA como padrão
 
-    public Despesa() {
+    public Receita() {
     }
 
-    public Despesa(int id, BigDecimal valor, LocalDate data, String descricao, Usuario usuario, Categoria categoria) {
+    public Receita(int id, BigDecimal valor, LocalDate data, String descricao, Usuario usuario, Categoria categoria) {
         this.id = id;
         this.valor = valor;
         this.data = data;
         this.descricao = descricao;
         this.usuario = usuario;
         this.categoria = categoria;
-        this.tipo = TipoTransacao.DESPESA; // Garantir que o tipo seja DESPESA
+        this.tipo = TipoTransacao.RECEITA; // Garantir que o tipo seja RECEITA
     }
 
     public int getId() {

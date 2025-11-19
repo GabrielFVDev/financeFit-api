@@ -133,9 +133,9 @@ public class UsuarioController {
 
     @GetMapping("/{id}/resumo/{mes}/{ano}")
     public ResponseEntity<java.util.Map<String, Object>> resumoFinanceiroPeriodo(
-            @PathVariable int id,
-            @PathVariable int mes,
-            @PathVariable int ano) {
+            @PathVariable Integer id,
+            @PathVariable Integer mes,
+            @PathVariable Integer ano) {
         try {
             if (mes < 1 || mes > 12) {
                 throw new IllegalArgumentException("Mês deve estar entre 1 e 12");
@@ -160,6 +160,12 @@ public class UsuarioController {
         u.setNome(dto.getNome());
         u.setEmail(dto.getEmail());
         u.setSenha(dto.getSenha());
+        if (dto.getDataCriacao() != null) {
+            u.setDataCriacao(dto.getDataCriacao());
+        }
+        if (dto.getMetaMensal() != null) {
+            u.setMetaMensal(dto.getMetaMensal());
+        }
         return u;
     }
 
@@ -168,6 +174,8 @@ public class UsuarioController {
         dto.setId(usuario.getUserId());
         dto.setNome(usuario.getNome());
         dto.setEmail(usuario.getEmail());
+        dto.setDataCriacao(usuario.getDataCriacao());
+        dto.setMetaMensal(usuario.getMetaMensal());
         // não retornar senha em respostas
         return dto;
     }

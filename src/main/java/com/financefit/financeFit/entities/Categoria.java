@@ -8,7 +8,7 @@ public class Categoria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "categoria_id")
-    private int categoriaId;
+    private Long categoriaId; // Alterado para Long
 
     @Column(name = "nome", nullable = false)
     private String nome;
@@ -16,16 +16,16 @@ public class Categoria {
     public Categoria() {
     }
 
-    public Categoria(int categoriaId, String nome) {
+    public Categoria(Long categoriaId, String nome) { // Alterado para Long
         this.categoriaId = categoriaId;
         this.nome = nome;
     }
 
-    public int getCategoriaId() {
+    public Long getCategoriaId() { // Alterado para Long
         return categoriaId;
     }
 
-    public void setCategoriaId(int categoriaId) {
+    public void setCategoriaId(Long categoriaId) { // Alterado para Long
         this.categoriaId = categoriaId;
     }
 
