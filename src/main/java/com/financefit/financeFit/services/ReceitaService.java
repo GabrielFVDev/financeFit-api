@@ -32,10 +32,7 @@ public class ReceitaService {
     }
 
     public List<Receita> listar(int idUsuario) {
-        return receitaRepository.findAll()
-                .stream()
-                .filter(r -> r.getUsuario().getUserId() == idUsuario)
-                .toList();
+        return receitaRepository.findByUsuarioUserId(idUsuario);
     }
 
     public Receita buscarPorId(int id) {

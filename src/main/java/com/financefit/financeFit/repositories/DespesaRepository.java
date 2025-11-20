@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Repository
 public interface DespesaRepository extends JpaRepository<Despesa, Integer> {
@@ -16,4 +17,7 @@ public interface DespesaRepository extends JpaRepository<Despesa, Integer> {
             @Param("mes") int mes,
             @Param("ano") int ano
     );
+
+    @Query("SELECT d FROM Despesa d JOIN FETCH d.usuario JOIN FETCH d.categoria WHERE d.usuario.userId = :idUsuario")
+    List<Despesa> findByUsuarioUserId(@Param("idUsuario") int idUsuario);
 }

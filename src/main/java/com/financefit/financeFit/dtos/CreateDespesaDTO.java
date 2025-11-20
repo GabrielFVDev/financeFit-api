@@ -6,15 +6,20 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class CreateDespesaDTO {
-    @NotNull
+    @NotNull(message = "Valor é obrigatório")
     private BigDecimal valor;
-    @NotNull
+
+    @NotNull(message = "Data é obrigatória")
     private LocalDate data;
+
     private String descricao;
-    @NotNull
-    private int idUsuario;
-    @NotNull
-    private Long idCategoria; // Alterado para Long
+
+    @NotNull(message = "ID do usuário é obrigatório")
+    private Integer idUsuario;
+
+    @NotNull(message = "ID da categoria é obrigatório")
+    private Long idCategoria;
+
     private TipoTransacao tipo;
 
     public CreateDespesaDTO() {

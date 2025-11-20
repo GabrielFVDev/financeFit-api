@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Repository
 public interface ReceitaRepository extends JpaRepository<Receita, Integer> {
@@ -16,4 +17,7 @@ public interface ReceitaRepository extends JpaRepository<Receita, Integer> {
             @Param("mes") int mes,
             @Param("ano") int ano
     );
+
+    @Query("SELECT r FROM Receita r JOIN FETCH r.usuario LEFT JOIN FETCH r.categoria WHERE r.usuario.userId = :idUsuario")
+    List<Receita> findByUsuarioUserId(@Param("idUsuario") int idUsuario);
 }

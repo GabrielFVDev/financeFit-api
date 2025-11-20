@@ -24,6 +24,7 @@
   - [Usuários](#usuários)
   - [Categorias](#categorias)
   - [Despesas](#despesas)
+  - [Receitas](#receitas)
 - [Exemplos de Uso](#-exemplos-de-uso)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 
@@ -34,7 +35,7 @@
 O **FinanceFit** é uma API completa para gerenciamento de finanças pessoais que permite:
 
 ✅ Cadastro e autenticação de usuários com JWT  
-✅ Gerenciamento de despesas e categorias  
+✅ Gerenciamento de despesas, receitas e categorias  
 ✅ Definição de metas mensais de gastos  
 ✅ Relatórios financeiros por período  
 ✅ Controle total das suas finanças  
@@ -308,8 +309,9 @@ Authorization: Bearer {token}
 ```json
 {
   "totalDespesas": 1500.50,
+  "totalReceitas": 3000.00,
   "metaMensal": 2000.00,
-  "saldo": 499.50,
+  "saldo": 1499.50,
   "percentualGasto": 75.03
 }
 ```
@@ -328,8 +330,9 @@ Authorization: Bearer {token}
   "mes": 11,
   "ano": 2025,
   "totalDespesas": 850.00,
+  "totalReceitas": 2500.00,
   "metaMensal": 2000.00,
-  "saldo": 1150.00,
+  "saldo": 1650.00,
   "percentualGasto": 42.50
 }
 ```
@@ -384,25 +387,47 @@ Authorization: Bearer {token}
 ]
 ```
 
+#### Atualizar categoria
+```http
+PUT /categorias/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "nome": "Alimentação e Mercado"
+}
+```
+
+#### Deletar categoria
+```http
+DELETE /categorias/{id}
+Authorization: Bearer {token}
+```
+
+**Response:** `204 No Content`
+
 ---
 
 ### 💸 Despesas
 
 #### Criar despesa
 ```http
-POST /despesas?idUsuario={id}&idCategoria={id}
+POST /despesas
 Authorization: Bearer {token}
 Content-Type: application/json
 ```
-
-**Exemplo:** `POST /despesas?idUsuario=1&idCategoria=1`
 
 **Body:**
 ```json
 {
   "valor": 150.50,
   "data": "2025-11-16",
-  "descricao": "Compras no supermercado"
+  "descricao": "Compras no supermercado",
+  "idUsuario": 1,
+  "idCategoria": 1
 }
 ```
 
@@ -413,15 +438,9 @@ Content-Type: application/json
   "valor": 150.50,
   "data": "2025-11-16",
   "descricao": "Compras no supermercado",
-  "usuario": {
-    "userId": 1,
-    "nome": "João Silva",
-    "email": "joao@email.com"
-  },
-  "categoria": {
-    "categoriaId": 1,
-    "nome": "Alimentação"
-  }
+  "idUsuario": 1,
+  "idCategoria": 1,
+  "tipo": "DESPESA"
 }
 ```
 
@@ -433,39 +452,100 @@ Authorization: Bearer {token}
 
 **Exemplo:** `GET /despesas/usuario/1`
 
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "valor": 150.50,
-    "data": "2025-11-16",
-    "descricao": "Compras no supermercado",
-    "usuario": {
-      "userId": 1,
-      "nome": "João Silva"
-    },
-    "categoria": {
-      "categoriaId": 1,
-      "nome": "Alimentação"
-    }
-  },
-  {
-    "id": 2,
-    "valor": 50.00,
-    "data": "2025-11-15",
-    "descricao": "Uber",
-    "usuario": {
-      "userId": 1,
-      "nome": "João Silva"
-    },
-    "categoria": {
-      "categoriaId": 2,
-      "nome": "Transporte"
-    }
-  }
-]
+#### Atualizar despesa
+```http
+PUT /despesas/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
 ```
+
+**Body:**
+```json
+{
+  "valor": 200.00,
+  "data": "2025-11-16",
+  "descricao": "Compras no supermercado (atualizado)",
+  "idUsuario": 1,
+  "idCategoria": 1
+}
+```
+
+#### Deletar despesa
+```http
+DELETE /despesas/{id}
+Authorization: Bearer {token}
+```
+
+**Response:** `204 No Content`
+
+---
+
+### 💰 Receitas
+
+#### Criar receita
+```http
+POST /receitas
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "valor": 3000.00,
+  "data": "2025-11-05",
+  "descricao": "Salário",
+  "idUsuario": 1,
+  "idCategoria": 4 // Opcional
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "valor": 3000.00,
+  "data": "2025-11-05",
+  "descricao": "Salário",
+  "idUsuario": 1,
+  "idCategoria": 4,
+  "tipo": "RECEITA"
+}
+```
+
+#### Listar receitas do usuário
+```http
+GET /receitas/usuario/{idUsuario}
+Authorization: Bearer {token}
+```
+
+**Exemplo:** `GET /receitas/usuario/1`
+
+#### Atualizar receita
+```http
+PUT /receitas/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "valor": 3100.00,
+  "data": "2025-11-05",
+  "descricao": "Salário com bônus",
+  "idUsuario": 1,
+  "idCategoria": 4
+}
+```
+
+#### Deletar receita
+```http
+DELETE /receitas/{id}
+Authorization: Bearer {token}
+```
+
+**Response:** `204 No Content`
 
 ---
 
@@ -507,31 +587,31 @@ curl -X POST http://localhost:8080/categorias \
   }'
 ```
 
-```bash
-curl -X POST http://localhost:8080/categorias \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
-  -d '{
-    "nome": "Transporte"
-  }'
-```
-
 #### 4. Registrar uma despesa
 ```bash
-curl -X POST "http://localhost:8080/despesas?idUsuario=1&idCategoria=1" \
+curl -X POST "http://localhost:8080/despesas" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI" \
   -d '{
     "valor": 150.50,
     "data": "2025-11-16",
-    "descricao": "Compras no supermercado"
+    "descricao": "Compras no supermercado",
+    "idUsuario": 1,
+    "idCategoria": 1
   }'
 ```
 
-#### 5. Listar todas as despesas do usuário
+#### 5. Registrar uma receita
 ```bash
-curl -X GET http://localhost:8080/despesas/usuario/1 \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+curl -X POST "http://localhost:8080/receitas" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "valor": 3000.00,
+    "data": "2025-11-05",
+    "descricao": "Salário",
+    "idUsuario": 1
+  }'
 ```
 
 #### 6. Ver resumo financeiro do mês
@@ -546,46 +626,57 @@ curl -X GET http://localhost:8080/usuarios/1/resumo/11/2025 \
 
 ```
 src/
-├── main/
-│   ├── java/
-│   │   └── com/financefit/financeFit/
-│   │       ├── FinanceFitApplication.java          # Classe principal
-│   │       ├── controllers/                         # Controladores REST
-│   │       │   ├── AuthController.java             # Autenticação (registro/login)
-│   │       │   ├── CategoriaController.java        # Gerenciamento de categorias
-│   │       │   ├── DespesaController.java          # Gerenciamento de despesas
-│   │       │   └── UsuarioController.java          # Gerenciamento de usuários
-│   │       ├── dtos/                                # Data Transfer Objects
-│   │       │   ├── AuthResponseDTO.java            # Resposta de autenticação
-│   │       │   ├── LoginDTO.java                   # Dados de login
-│   │       │   ├── RegisterDTO.java                # Dados de registro
-│   │       │   └── UsuarioDTO.java                 # Dados de usuário
-│   │       ├── entities/                            # Entidades JPA
-│   │       │   ├── Categoria.java                  # Entidade Categoria
-│   │       │   ├── Despesa.java                    # Entidade Despesa
-│   │       │   └── Usuario.java                    # Entidade Usuario
-│   │       ├── exception/                           # Tratamento de exceções
-│   │       │   └── GlobalExceptionHandler.java     # Handler global
-│   │       ├── repositories/                        # Camada de persistência
-│   │       │   ├── CategoriaRepository.java
-│   │       │   ├── DespesaRepository.java
-│   │       │   └── UsuarioRepository.java
-│   │       ├── security/                            # Configuração de segurança
-│   │       │   ├── CustomUserDetailsService.java   # Service de autenticação
-│   │       │   ├── JwtAuthenticationFilter.java    # Filtro JWT
-│   │       │   ├── JwtUtil.java                    # Utilitário JWT
-│   │       │   └── SecurityConfig.java             # Configuração Spring Security
-│   │       └── services/                            # Camada de negócio
-│   │           ├── AuthService.java
-│   │           ├── CategoriaService.java
-│   │           ├── DespesaService.java
-│   │           └── UsuarioService.java
-│   └── resources/
-│       └── application.properties                   # Configurações da aplicação
-└── test/
-    └── java/
-        └── com/financefit/financeFit/
-            └── FinanceFitApplicationTests.java     # Testes
+  ├── main/
+  │   ├── java/
+  │   │   └── com/financefit/financeFit/
+  │   │       ├── FinanceFitApplication.java          # Classe principal
+  │   │       ├── controllers/                         # Controladores REST
+  │   │       │   ├── AuthController.java             # Autenticação (registro/login)
+  │   │       │   ├── CategoriaController.java        # Gerenciamento de categorias
+  │   │       │   ├── DespesaController.java          # Gerenciamento de despesas
+  │   │       │   ├── ReceitaController.java          # Gerenciamento de receitas
+  │   │       │   └── UsuarioController.java          # Gerenciamento de usuários
+  │   │       ├── dtos/                                # Data Transfer Objects
+  │   │       │   ├── AuthResponseDTO.java            # Resposta de autenticação
+  │   │       │   ├── CategoriaDTO.java
+  │   │       │   ├── CreateCategoriaDTO.java
+  │   │       │   ├── CreateDespesaDTO.java
+  │   │       │   ├── CreateReceitaDTO.java
+  │   │       │   ├── DespesaDTO.java
+  │   │       │   ├── LoginDTO.java                   # Dados de login
+  │   │       │   ├── ReceitaDTO.java
+  │   │       │   ├── RegisterDTO.java                # Dados de registro
+  │   │       │   └── UsuarioDTO.java                 # Dados de usuário
+  │   │       ├── entities/                            # Entidades JPA
+  │   │       │   ├── Categoria.java                  # Entidade Categoria
+  │   │       │   ├── Despesa.java                    # Entidade Despesa
+  │   │       │   ├── Receita.java                    # Entidade Receita
+  │   │       │   ├── TipoTransacao.java              # Enum para tipo de transação
+  │   │       │   └── Usuario.java                    # Entidade Usuario
+  │   │       ├── exception/                           # Tratamento de exceções
+  │   │       │   └── GlobalExceptionHandler.java     # Handler global
+  │   │       ├── repositories/                        # Camada de persistência
+  │   │       │   ├── CategoriaRepository.java
+  │   │       │   ├── DespesaRepository.java
+  │   │       │   ├── ReceitaRepository.java
+  │   │       │   └── UsuarioRepository.java
+  │   │       ├── security/                            # Configuração de segurança
+  │   │       │   ├── CustomUserDetailsService.java   # Service de autenticação
+  │   │       │   ├── JwtAuthenticationFilter.java    # Filtro JWT
+  │   │       │   ├── JwtUtil.java                    # Utilitário JWT
+  │   │       │   └── SecurityConfig.java             # Configuração Spring Security
+  │   │       └── services/                            # Camada de negócio
+  │   │           ├── AuthService.java
+  │   │           ├── CategoriaService.java
+  │   │           ├── DespesaService.java
+  │   │           ├── ReceitaService.java
+  │   │           └── UsuarioService.java
+  │   └── resources/
+  │       └── application.properties                   # Configurações da aplicação
+  └── test/
+      └── java/
+          └── com/financefit/financeFit/
+              └── FinanceFitApplicationTests.java     # Testes
 ```
 
 ---
@@ -625,7 +716,7 @@ O token JWT tem validade de **24 horas** (86400000 ms) e contém:
 ### Entidade: Categoria
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| categoriaId | Integer (PK) | ID único da categoria |
+| categoriaId | Long (PK) | ID único da categoria |
 | nome | String | Nome da categoria |
 
 ### Entidade: Despesa
@@ -635,8 +726,20 @@ O token JWT tem validade de **24 horas** (86400000 ms) e contém:
 | valor | BigDecimal | Valor da despesa |
 | data | LocalDate | Data da despesa |
 | descricao | String | Descrição opcional |
+| tipo | String | "DESPESA" |
 | usuario_id | Integer (FK) | Referência ao usuário |
-| categoria_id | Integer (FK) | Referência à categoria |
+| categoria_id | Long (FK) | Referência à categoria |
+
+### Entidade: Receita
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | Integer (PK) | ID único da receita |
+| valor | BigDecimal | Valor da receita |
+| data | LocalDate | Data da receita |
+| descricao | String | Descrição opcional |
+| tipo | String | "RECEITA" |
+| usuario_id | Integer (FK) | Referência ao usuário |
+| categoria_id | Long (FK) | Referência à categoria (opcional) |
 
 ---
 
@@ -709,13 +812,13 @@ A API retorna erros padronizados no formato:
 
 ## 🚀 Próximas Funcionalidades
 
+- [x] Receitas além de despesas
 - [ ] Paginação nos endpoints de listagem
 - [ ] Filtros avançados de despesas (por período, categoria, valor)
 - [ ] Dashboard com gráficos de gastos
 - [ ] Exportação de relatórios (PDF, Excel)
 - [ ] Notificações quando ultrapassar a meta
 - [ ] Categorias customizadas por usuário
-- [ ] Receitas além de despesas
 - [ ] Múltiplas moedas
 - [ ] Refresh token automático
 
@@ -752,4 +855,3 @@ Dúvidas ou sugestões? Entre em contato!
   **⭐ Se este projeto te ajudou, considere dar uma estrela!**
   
 </div>
-

@@ -31,10 +31,7 @@ public class DespesaService {
     }
 
     public List<Despesa> listar(int idUsuario) {
-        return despesaRepository.findAll()
-                .stream()
-                .filter(d -> d.getUsuario().getUserId() == idUsuario)
-                .toList();
+        return despesaRepository.findByUsuarioUserId(idUsuario);
     }
 
     public Despesa buscarPorId(int id) {
