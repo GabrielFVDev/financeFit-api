@@ -27,6 +27,8 @@ public class ReceitaDTO {
 
     private Long idCategoria; // Opcional para receitas
 
+    private CategoriaDTO categoria;
+
     @NotNull(message = "Tipo é obrigatório")
     private TipoTransacao tipo;
 
@@ -89,6 +91,14 @@ public class ReceitaDTO {
 
     public void setIdCategoria(Long idCategoria) {
         this.idCategoria = idCategoria;
+    }
+
+    public CategoriaDTO getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(CategoriaDTO categoria) {
+        this.categoria = categoria;
     }
 
     public TipoTransacao getTipo() {

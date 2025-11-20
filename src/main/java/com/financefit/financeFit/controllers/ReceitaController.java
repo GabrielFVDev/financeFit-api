@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,19 +28,16 @@ public class ReceitaController {
             if (createReceitaDTO.getIdUsuario() <= 0) {
                 throw new IllegalArgumentException("ID do usuário inválido");
             }
+            if (createReceitaDTO.getIdCategoria() == null || createReceitaDTO.getIdCategoria() <= 0) {
+                throw new IllegalArgumentException("ID da categoria inválido");
+            }
 
             Receita receita = new Receita();
             BeanUtils.copyProperties(createReceitaDTO, receita);
 
-            Receita criada = receitaService.salvar(receita, createReceitaDTO.getIdUsuario(), Optional.ofNullable(createReceitaDTO.getIdCategoria()));
-            
-            ReceitaDTO receitaDTO = new ReceitaDTO();
-            BeanUtils.copyProperties(criada, receitaDTO);
-            receitaDTO.setIdUsuario(criada.getUsuario().getUserId());
-            if (criada.getCategoria() != null) {
-                receitaDTO.setIdCategoria(criada.getCategoria().getCategoriaId());
-            }
-            receitaDTO.setTipo(criada.getTipo()); // Adicionar o tipo
+            Receita criada = receitaService.salvar(receita, createReceitaDTO.getIdUsuario(), createReceitaDTO.getIdCategoria());
+
+            ReceitaDTO receitaDTO = convertToReceitaDTO(criada);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(receitaDTO);
         } catch (IllegalArgumentException e) {
@@ -58,16 +54,9 @@ public class ReceitaController {
                 throw new IllegalArgumentException("ID do usuário inválido");
             }
             List<Receita> receitas = receitaService.listar(idUsuario);
-            List<ReceitaDTO> receitasDTO = receitas.stream().map(receita -> {
-                ReceitaDTO dto = new ReceitaDTO();
-                BeanUtils.copyProperties(receita, dto);
-                dto.setIdUsuario(receita.getUsuario().getUserId());
-                if (receita.getCategoria() != null) {
-                    dto.setIdCategoria(receita.getCategoria().getCategoriaId());
-                }
-                dto.setTipo(receita.getTipo()); // Adicionar o tipo
-                return dto;
-            }).collect(Collectors.toList());
+            List<ReceitaDTO> receitasDTO = receitas.stream()
+                    .map(this::convertToReceitaDTO)
+                    .collect(Collectors.toList());
             return ResponseEntity.ok(receitasDTO);
         } catch (IllegalArgumentException e) {
             throw e;
@@ -80,13 +69,7 @@ public class ReceitaController {
     public ResponseEntity<ReceitaDTO> buscarPorId(@PathVariable int id) {
         try {
             Receita receita = receitaService.buscarPorId(id);
-            ReceitaDTO receitaDTO = new ReceitaDTO();
-            BeanUtils.copyProperties(receita, receitaDTO);
-            receitaDTO.setIdUsuario(receita.getUsuario().getUserId());
-            if (receita.getCategoria() != null) {
-                receitaDTO.setIdCategoria(receita.getCategoria().getCategoriaId());
-            }
-            receitaDTO.setTipo(receita.getTipo()); // Adicionar o tipo
+            ReceitaDTO receitaDTO = convertToReceitaDTO(receita);
             return ResponseEntity.ok(receitaDTO);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -103,19 +86,16 @@ public class ReceitaController {
             if (createReceitaDTO.getIdUsuario() == null || createReceitaDTO.getIdUsuario() <= 0) {
                 throw new IllegalArgumentException("ID do usuário inválido");
             }
+            if (createReceitaDTO.getIdCategoria() == null || createReceitaDTO.getIdCategoria() <= 0) {
+                throw new IllegalArgumentException("ID da categoria inválido");
+            }
 
             Receita receitaAtualizada = new Receita();
             BeanUtils.copyProperties(createReceitaDTO, receitaAtualizada);
 
-            Receita atualizada = receitaService.atualizar(id, receitaAtualizada, createReceitaDTO.getIdUsuario(), Optional.ofNullable(createReceitaDTO.getIdCategoria()));
-            
-            ReceitaDTO receitaDTO = new ReceitaDTO();
-            BeanUtils.copyProperties(atualizada, receitaDTO);
-            receitaDTO.setIdUsuario(atualizada.getUsuario().getUserId());
-            if (atualizada.getCategoria() != null) {
-                receitaDTO.setIdCategoria(atualizada.getCategoria().getCategoriaId());
-            }
-            receitaDTO.setTipo(atualizada.getTipo()); // Adicionar o tipo
+            Receita atualizada = receitaService.atualizar(id, receitaAtualizada, createReceitaDTO.getIdUsuario(), createReceitaDTO.getIdCategoria());
+
+            ReceitaDTO receitaDTO = convertToReceitaDTO(atualizada);
 
             return ResponseEntity.ok(receitaDTO);
         } catch (IllegalArgumentException e) {
@@ -137,5 +117,22 @@ public class ReceitaController {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao deletar receita: " + e.getMessage());
         }
+    }
+
+    private ReceitaDTO convertToReceitaDTO(Receita receita) {
+        ReceitaDTO dto = new ReceitaDTO();
+        BeanUtils.copyProperties(receita, dto);
+        dto.setIdUsuario(receita.getUsuario().getUserId());
+        dto.setTipo(receita.getTipo());
+
+        if (receita.getCategoria() != null) {
+            com.financefit.financeFit.dtos.CategoriaDTO categoriaDTO = new com.financefit.financeFit.dtos.CategoriaDTO();
+            categoriaDTO.setCategoriaId(receita.getCategoria().getCategoriaId());
+            categoriaDTO.setNome(receita.getCategoria().getNome());
+            dto.setCategoria(categoriaDTO);
+            dto.setIdCategoria(receita.getCategoria().getCategoriaId());
+        }
+
+        return dto;
     }
 }

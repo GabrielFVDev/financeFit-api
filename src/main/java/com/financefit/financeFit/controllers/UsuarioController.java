@@ -171,14 +171,9 @@ public class UsuarioController {
     public ResponseEntity<java.util.List<DespesaDTO>> listarDespesasPorUsuario(@PathVariable int id) {
         try {
             java.util.List<Despesa> despesas = despesaService.listar(id);
-            java.util.List<DespesaDTO> despesasDTO = despesas.stream().map(despesa -> {
-                DespesaDTO dto = new DespesaDTO();
-                BeanUtils.copyProperties(despesa, dto);
-                dto.setIdUsuario(despesa.getUsuario().getUserId());
-                dto.setIdCategoria(despesa.getCategoria().getCategoriaId());
-                dto.setTipo(despesa.getTipo());
-                return dto;
-            }).collect(java.util.stream.Collectors.toList());
+            java.util.List<DespesaDTO> despesasDTO = despesas.stream()
+                    .map(this::convertToDespesaDTO)
+                    .collect(java.util.stream.Collectors.toList());
             return ResponseEntity.ok(despesasDTO);
         } catch (Exception e) {
             throw new RuntimeException("Erro ao listar despesas do usuário com ID " + id + ": " + e.getMessage());
@@ -189,16 +184,9 @@ public class UsuarioController {
     public ResponseEntity<java.util.List<ReceitaDTO>> listarReceitasPorUsuario(@PathVariable int id) {
         try {
             java.util.List<Receita> receitas = receitaService.listar(id);
-            java.util.List<ReceitaDTO> receitasDTO = receitas.stream().map(receita -> {
-                ReceitaDTO dto = new ReceitaDTO();
-                BeanUtils.copyProperties(receita, dto);
-                dto.setIdUsuario(receita.getUsuario().getUserId());
-                if (receita.getCategoria() != null) {
-                    dto.setIdCategoria(receita.getCategoria().getCategoriaId());
-                }
-                dto.setTipo(receita.getTipo());
-                return dto;
-            }).collect(java.util.stream.Collectors.toList());
+            java.util.List<ReceitaDTO> receitasDTO = receitas.stream()
+                    .map(this::convertToReceitaDTO)
+                    .collect(java.util.stream.Collectors.toList());
             return ResponseEntity.ok(receitasDTO);
         } catch (Exception e) {
             throw new RuntimeException("Erro ao listar receitas do usuário com ID " + id + ": " + e.getMessage());
@@ -227,11 +215,7 @@ public class UsuarioController {
 
             Despesa criada = despesaService.salvar(despesa, id, createDespesaDTO.getIdCategoria());
 
-            DespesaDTO despesaDTO = new DespesaDTO();
-            BeanUtils.copyProperties(criada, despesaDTO);
-            despesaDTO.setIdUsuario(criada.getUsuario().getUserId());
-            despesaDTO.setIdCategoria(criada.getCategoria().getCategoriaId());
-            despesaDTO.setTipo(criada.getTipo());
+            DespesaDTO despesaDTO = convertToDespesaDTO(criada);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(despesaDTO);
         } catch (IllegalArgumentException e) {
@@ -254,18 +238,16 @@ public class UsuarioController {
             // Garantir que o ID do usuário seja o do path
             createReceitaDTO.setIdUsuario(id);
 
+            if (createReceitaDTO.getIdCategoria() == null || createReceitaDTO.getIdCategoria() <= 0) {
+                throw new IllegalArgumentException("ID da categoria inválido");
+            }
+
             Receita receita = new Receita();
             BeanUtils.copyProperties(createReceitaDTO, receita);
 
-            Receita criada = receitaService.salvar(receita, id, Optional.ofNullable(createReceitaDTO.getIdCategoria()));
+            Receita criada = receitaService.salvar(receita, id, createReceitaDTO.getIdCategoria());
 
-            ReceitaDTO receitaDTO = new ReceitaDTO();
-            BeanUtils.copyProperties(criada, receitaDTO);
-            receitaDTO.setIdUsuario(criada.getUsuario().getUserId());
-            if (criada.getCategoria() != null) {
-                receitaDTO.setIdCategoria(criada.getCategoria().getCategoriaId());
-            }
-            receitaDTO.setTipo(criada.getTipo());
+            ReceitaDTO receitaDTO = convertToReceitaDTO(criada);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(receitaDTO);
         } catch (IllegalArgumentException e) {
@@ -300,6 +282,40 @@ public class UsuarioController {
         dto.setDataCriacao(usuario.getDataCriacao());
         dto.setMetaMensal(usuario.getMetaMensal());
         // não retornar senha em respostas
+        return dto;
+    }
+
+    private DespesaDTO convertToDespesaDTO(Despesa despesa) {
+        DespesaDTO dto = new DespesaDTO();
+        BeanUtils.copyProperties(despesa, dto);
+        dto.setIdUsuario(despesa.getUsuario().getUserId());
+        dto.setTipo(despesa.getTipo());
+
+        if (despesa.getCategoria() != null) {
+            CategoriaDTO categoriaDTO = new CategoriaDTO();
+            categoriaDTO.setCategoriaId(despesa.getCategoria().getCategoriaId());
+            categoriaDTO.setNome(despesa.getCategoria().getNome());
+            dto.setCategoria(categoriaDTO);
+            dto.setIdCategoria(despesa.getCategoria().getCategoriaId());
+        }
+
+        return dto;
+    }
+
+    private ReceitaDTO convertToReceitaDTO(Receita receita) {
+        ReceitaDTO dto = new ReceitaDTO();
+        BeanUtils.copyProperties(receita, dto);
+        dto.setIdUsuario(receita.getUsuario().getUserId());
+        dto.setTipo(receita.getTipo());
+
+        if (receita.getCategoria() != null) {
+            CategoriaDTO categoriaDTO = new CategoriaDTO();
+            categoriaDTO.setCategoriaId(receita.getCategoria().getCategoriaId());
+            categoriaDTO.setNome(receita.getCategoria().getNome());
+            dto.setCategoria(categoriaDTO);
+            dto.setIdCategoria(receita.getCategoria().getCategoriaId());
+        }
+
         return dto;
     }
 }

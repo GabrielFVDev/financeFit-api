@@ -29,6 +29,8 @@ public class DespesaDTO {
     @Positive(message = "ID da categoria deve ser positivo")
     private Long idCategoria;
 
+    private CategoriaDTO categoria;
+
     @NotNull(message = "Tipo é obrigatório")
     private TipoTransacao tipo;
 
@@ -91,6 +93,14 @@ public class DespesaDTO {
 
     public void setIdCategoria(Long idCategoria) {
         this.idCategoria = idCategoria;
+    }
+
+    public CategoriaDTO getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(CategoriaDTO categoria) {
+        this.categoria = categoria;
     }
 
     public TipoTransacao getTipo() {

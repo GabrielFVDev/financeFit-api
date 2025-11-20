@@ -20,6 +20,7 @@ public class CreateReceitaDTO {
     @Positive(message = "ID do usuário deve ser positivo")
     private Integer idUsuario;
 
+    @NotNull(message = "ID da categoria é obrigatório")
     private Long idCategoria;
 
     private TipoTransacao tipo;

@@ -37,11 +37,7 @@ public class DespesaController {
 
             Despesa criada = despesaService.salvar(despesa, createDespesaDTO.getIdUsuario(), createDespesaDTO.getIdCategoria());
             
-            DespesaDTO despesaDTO = new DespesaDTO();
-            BeanUtils.copyProperties(criada, despesaDTO);
-            despesaDTO.setIdUsuario(criada.getUsuario().getUserId());
-            despesaDTO.setIdCategoria(criada.getCategoria().getCategoriaId());
-            despesaDTO.setTipo(criada.getTipo()); // Adicionar o tipo
+            DespesaDTO despesaDTO = convertToDespesaDTO(criada);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(despesaDTO);
         } catch (IllegalArgumentException e) {
@@ -58,14 +54,9 @@ public class DespesaController {
                 throw new IllegalArgumentException("ID do usuário inválido");
             }
             List<Despesa> despesas = despesaService.listar(idUsuario);
-            List<DespesaDTO> despesasDTO = despesas.stream().map(despesa -> {
-                DespesaDTO dto = new DespesaDTO();
-                BeanUtils.copyProperties(despesa, dto);
-                dto.setIdUsuario(despesa.getUsuario().getUserId());
-                dto.setIdCategoria(despesa.getCategoria().getCategoriaId());
-                dto.setTipo(despesa.getTipo()); // Adicionar o tipo
-                return dto;
-            }).collect(Collectors.toList());
+            List<DespesaDTO> despesasDTO = despesas.stream()
+                    .map(this::convertToDespesaDTO)
+                    .collect(Collectors.toList());
             return ResponseEntity.ok(despesasDTO);
         } catch (IllegalArgumentException e) {
             throw e;
@@ -78,11 +69,7 @@ public class DespesaController {
     public ResponseEntity<DespesaDTO> buscarPorId(@PathVariable int id) {
         try {
             Despesa despesa = despesaService.buscarPorId(id);
-            DespesaDTO despesaDTO = new DespesaDTO();
-            BeanUtils.copyProperties(despesa, despesaDTO);
-            despesaDTO.setIdUsuario(despesa.getUsuario().getUserId());
-            despesaDTO.setIdCategoria(despesa.getCategoria().getCategoriaId());
-            despesaDTO.setTipo(despesa.getTipo()); // Adicionar o tipo
+            DespesaDTO despesaDTO = convertToDespesaDTO(despesa);
             return ResponseEntity.ok(despesaDTO);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -108,11 +95,7 @@ public class DespesaController {
 
             Despesa atualizada = despesaService.atualizar(id, despesaAtualizada, createDespesaDTO.getIdUsuario(), createDespesaDTO.getIdCategoria());
             
-            DespesaDTO despesaDTO = new DespesaDTO();
-            BeanUtils.copyProperties(atualizada, despesaDTO);
-            despesaDTO.setIdUsuario(atualizada.getUsuario().getUserId());
-            despesaDTO.setIdCategoria(atualizada.getCategoria().getCategoriaId());
-            despesaDTO.setTipo(atualizada.getTipo()); // Adicionar o tipo
+            DespesaDTO despesaDTO = convertToDespesaDTO(atualizada);
 
             return ResponseEntity.ok(despesaDTO);
         } catch (RuntimeException e) {
@@ -132,5 +115,22 @@ public class DespesaController {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao deletar despesa: " + e.getMessage());
         }
+    }
+
+    private DespesaDTO convertToDespesaDTO(Despesa despesa) {
+        DespesaDTO dto = new DespesaDTO();
+        BeanUtils.copyProperties(despesa, dto);
+        dto.setIdUsuario(despesa.getUsuario().getUserId());
+        dto.setTipo(despesa.getTipo());
+
+        if (despesa.getCategoria() != null) {
+            com.financefit.financeFit.dtos.CategoriaDTO categoriaDTO = new com.financefit.financeFit.dtos.CategoriaDTO();
+            categoriaDTO.setCategoriaId(despesa.getCategoria().getCategoriaId());
+            categoriaDTO.setNome(despesa.getCategoria().getNome());
+            dto.setCategoria(categoriaDTO);
+            dto.setIdCategoria(despesa.getCategoria().getCategoriaId());
+        }
+
+        return dto;
     }
 }

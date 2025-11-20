@@ -21,13 +21,13 @@ public class ReceitaService {
     @Autowired
     private CategoriaService categoriaService;
 
-    public Receita salvar(Receita receita, int idUsuario, Optional<Long> idCategoria) { // Alterado para Long
+    public Receita salvar(Receita receita, int idUsuario, Long idCategoria) {
         receita.setUsuario(usuarioService.buscarPorId(idUsuario));
-        idCategoria.ifPresent(catId -> receita.setCategoria(categoriaService.listarTodas()
+        receita.setCategoria(categoriaService.listarTodas()
                 .stream()
-                .filter(c -> Objects.equals(c.getCategoriaId(), catId)) // Usar Objects.equals para comparar Long
+                .filter(c -> Objects.equals(c.getCategoriaId(), idCategoria))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"))));
+                .orElseThrow(() -> new RuntimeException("Categoria não encontrada")));
         return receitaRepository.save(receita);
     }
 
@@ -40,21 +40,17 @@ public class ReceitaService {
                 .orElseThrow(() -> new RuntimeException("Receita não encontrada"));
     }
 
-    public Receita atualizar(int id, Receita receitaAtualizada, int idUsuario, Optional<Long> idCategoria) { // Alterado para Long
+    public Receita atualizar(int id, Receita receitaAtualizada, int idUsuario, Long idCategoria) {
         Receita receitaExistente = buscarPorId(id);
         receitaExistente.setValor(receitaAtualizada.getValor());
         receitaExistente.setData(receitaAtualizada.getData());
         receitaExistente.setDescricao(receitaAtualizada.getDescricao());
-        receitaExistente.setUsuario(usuarioService.buscarPorId(idUsuario)); // Ensure user is the same or updated
-
-        idCategoria.ifPresentOrElse(
-                catId -> receitaExistente.setCategoria(categoriaService.listarTodas()
-                        .stream()
-                        .filter(c -> Objects.equals(c.getCategoriaId(), catId)) // Usar Objects.equals para comparar Long
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Categoria não encontrada"))),
-                () -> receitaExistente.setCategoria(null) // If category is optional and not provided, set to null
-        );
+        receitaExistente.setUsuario(usuarioService.buscarPorId(idUsuario));
+        receitaExistente.setCategoria(categoriaService.listarTodas()
+                .stream()
+                .filter(c -> Objects.equals(c.getCategoriaId(), idCategoria))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Categoria não encontrada")));
 
         return receitaRepository.save(receitaExistente);
     }
