@@ -21,7 +21,7 @@ public class ReceitaService {
     @Autowired
     private CategoriaService categoriaService;
 
-    public Receita salvar(Receita receita, int idUsuario, Long idCategoria) {
+    public Receita salvar(Receita receita, Long idUsuario, Long idCategoria) {
         receita.setUsuario(usuarioService.buscarPorId(idUsuario));
         receita.setCategoria(categoriaService.listarTodas()
                 .stream()
@@ -31,16 +31,16 @@ public class ReceitaService {
         return receitaRepository.save(receita);
     }
 
-    public List<Receita> listar(int idUsuario) {
+    public List<Receita> listar(Long idUsuario) {
         return receitaRepository.findByUsuarioUserId(idUsuario);
     }
 
-    public Receita buscarPorId(int id) {
+    public Receita buscarPorId(Long id) {
         return receitaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Receita não encontrada"));
     }
 
-    public Receita atualizar(int id, Receita receitaAtualizada, int idUsuario, Long idCategoria) {
+    public Receita atualizar(Long id, Receita receitaAtualizada, Long idUsuario, Long idCategoria) {
         Receita receitaExistente = buscarPorId(id);
         receitaExistente.setValor(receitaAtualizada.getValor());
         receitaExistente.setData(receitaAtualizada.getData());
@@ -55,7 +55,7 @@ public class ReceitaService {
         return receitaRepository.save(receitaExistente);
     }
 
-    public void deletar(int id) {
+    public void deletar(Long id) {
         receitaRepository.deleteById(id);
     }
 }

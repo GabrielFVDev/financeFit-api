@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public class DespesaDTO {
     @NotNull(message = "ID é obrigatório")
     @Positive(message = "ID deve ser positivo")
-    private Integer id;
+    private Long id;
 
     @NotNull(message = "Valor é obrigatório")
     @Positive(message = "Valor deve ser positivo")
@@ -23,7 +23,7 @@ public class DespesaDTO {
 
     @NotNull(message = "ID do usuário é obrigatório")
     @Positive(message = "ID do usuário deve ser positivo")
-    private Integer idUsuario;
+    private Long idUsuario;
 
     @NotNull(message = "ID da categoria é obrigatório")
     @Positive(message = "ID da categoria deve ser positivo")
@@ -37,7 +37,7 @@ public class DespesaDTO {
     public DespesaDTO() {
     }
 
-    public DespesaDTO(Integer id, BigDecimal valor, LocalDate data, String descricao, Integer idUsuario, Long idCategoria, TipoTransacao tipo) {
+    public DespesaDTO(Long id, BigDecimal valor, LocalDate data, String descricao, Long idUsuario, Long idCategoria, TipoTransacao tipo) {
         this.id = id;
         this.valor = valor;
         this.data = data;
@@ -47,11 +47,11 @@ public class DespesaDTO {
         this.tipo = tipo;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -79,11 +79,11 @@ public class DespesaDTO {
         this.descricao = descricao;
     }
 
-    public Integer getIdUsuario() {
+    public Long getIdUsuario() {
         return idUsuario;
     }
 
-    public void setIdUsuario(Integer idUsuario) {
+    public void setIdUsuario(Long idUsuario) {
         this.idUsuario = idUsuario;
     }
 

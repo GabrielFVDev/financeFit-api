@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public class ReceitaDTO {
     @NotNull(message = "ID é obrigatório")
     @Positive(message = "ID deve ser positivo")
-    private Integer id;
+    private Long id;
 
     @NotNull(message = "Valor é obrigatório")
     @Positive(message = "Valor deve ser positivo")
@@ -23,7 +23,7 @@ public class ReceitaDTO {
 
     @NotNull(message = "ID do usuário é obrigatório")
     @Positive(message = "ID do usuário deve ser positivo")
-    private Integer idUsuario;
+    private Long idUsuario;
 
     private Long idCategoria; // Opcional para receitas
 
@@ -35,7 +35,7 @@ public class ReceitaDTO {
     public ReceitaDTO() {
     }
 
-    public ReceitaDTO(Integer id, BigDecimal valor, LocalDate data, String descricao, Integer idUsuario, Long idCategoria, TipoTransacao tipo) {
+    public ReceitaDTO(Long id, BigDecimal valor, LocalDate data, String descricao, Long idUsuario, Long idCategoria, TipoTransacao tipo) {
         this.id = id;
         this.valor = valor;
         this.data = data;
@@ -45,11 +45,11 @@ public class ReceitaDTO {
         this.tipo = tipo;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -77,11 +77,11 @@ public class ReceitaDTO {
         this.descricao = descricao;
     }
 
-    public Integer getIdUsuario() {
+    public Long getIdUsuario() {
         return idUsuario;
     }
 
-    public void setIdUsuario(Integer idUsuario) {
+    public void setIdUsuario(Long idUsuario) {
         this.idUsuario = idUsuario;
     }
 

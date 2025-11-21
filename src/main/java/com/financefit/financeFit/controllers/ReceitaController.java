@@ -48,7 +48,7 @@ public class ReceitaController {
     }
 
     @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<List<ReceitaDTO>> listarPorUsuario(@PathVariable int idUsuario) {
+    public ResponseEntity<List<ReceitaDTO>> listarPorUsuario(@PathVariable Long idUsuario) {
         try {
             if (idUsuario <= 0) {
                 throw new IllegalArgumentException("ID do usuário inválido");
@@ -66,7 +66,7 @@ public class ReceitaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReceitaDTO> buscarPorId(@PathVariable int id) {
+    public ResponseEntity<ReceitaDTO> buscarPorId(@PathVariable Long id) {
         try {
             Receita receita = receitaService.buscarPorId(id);
             ReceitaDTO receitaDTO = convertToReceitaDTO(receita);
@@ -80,7 +80,7 @@ public class ReceitaController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ReceitaDTO> atualizar(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @Valid @RequestBody CreateReceitaDTO createReceitaDTO) {
         try {
             if (createReceitaDTO.getIdUsuario() == null || createReceitaDTO.getIdUsuario() <= 0) {
@@ -108,7 +108,7 @@ public class ReceitaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Integer id) {
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
         try {
             receitaService.deletar(id);
             return ResponseEntity.noContent().build();

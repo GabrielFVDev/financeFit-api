@@ -5,6 +5,7 @@ import com.financefit.financeFit.repositories.DespesaRepository;
 import com.financefit.financeFit.repositories.ReceitaRepository;
 import com.financefit.financeFit.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,7 +28,10 @@ public class UsuarioService {
     @Autowired
     private ReceitaRepository receitaRepository; // Injetar ReceitaRepository
 
-    public Usuario buscarPorId(int id) {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
@@ -43,12 +47,12 @@ public class UsuarioService {
         return usuarioRepository.findAll();
     }
 
-    public void deletarUsuario(int id) {
+    public void deletarUsuario(Long id) {
         Usuario usuario = buscarPorId(id); // valida se existe
         usuarioRepository.deleteById(id);
     }
 
-    public Usuario atualizarUsuario(int idUsuario, Usuario dadosAtualizados) {
+    public Usuario atualizarUsuario(Long idUsuario, Usuario dadosAtualizados) {
         Usuario usuario = buscarPorId(idUsuario);
 
         if (dadosAtualizados.getNome() != null && !dadosAtualizados.getNome().isEmpty()) {
@@ -67,28 +71,53 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    // Novo método para atualização por email (usuário autenticado)
+    public Usuario atualizarUsuarioPorEmail(String email, String nome, String novaSenha, Double metaMensal) {
+        Usuario usuario = buscarPorEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        if (nome != null && !nome.isBlank()) {
+            usuario.setNome(nome);
+        }
+        if (novaSenha != null && !novaSenha.isBlank()) {
+            usuario.setSenha(passwordEncoder.encode(novaSenha));
+        }
+        if (metaMensal != null && metaMensal >= 0) {
+            usuario.setMetaMensal(metaMensal);
+        }
+        return usuarioRepository.save(usuario);
+    }
+
+    // Método para deletar usuário autenticado (por email)
+    public void deletarUsuarioPorEmail(String email) {
+        Usuario usuario = buscarPorEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        // Remover despesas e receitas associadas (se política for cascata manual)
+        // Se o mapeamento não estiver configurado com cascade + orphanRemoval, removemos manualmente
+        despesaRepository.findByUsuarioUserId(usuario.getUserId()).forEach(d -> despesaRepository.deleteById(d.getId()));
+        receitaRepository.findByUsuarioUserId(usuario.getUserId()).forEach(r -> receitaRepository.deleteById(r.getId()));
+        usuarioRepository.deleteById(usuario.getUserId());
+    }
+
     public Optional<Usuario> buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email);
     }
 
-    public Usuario alterarSenha(int idUsuario, String novaSenha) {
+    public Usuario alterarSenha(Long idUsuario, String novaSenha) {
         Usuario usuario = buscarPorId(idUsuario);
         usuario.setSenha(novaSenha);
         return usuarioRepository.save(usuario);
     }
 
-    public Usuario atualizarMeta(int idUsuario, double novaMeta) {
+    public Usuario atualizarMeta(Long idUsuario, double novaMeta) {
         Usuario usuario = buscarPorId(idUsuario);
         usuario.setMetaMensal(novaMeta);
         return usuarioRepository.save(usuario);
     }
 
-    public Map<String, Object> resumoFinanceiro(int idUsuario) {
+    public Map<String, Object> resumoFinanceiro(Long idUsuario) {
         LocalDate hoje = LocalDate.now();
         return resumoFinanceiro(idUsuario, hoje.getMonthValue(), hoje.getYear());
     }
 
-    public Map<String, Object> resumoFinanceiro(int idUsuario, int mes, int ano) {
+    public Map<String, Object> resumoFinanceiro(Long idUsuario, int mes, int ano) {
         BigDecimal totalGasto = despesaRepository.calcularTotalGastoNoMes(
                 idUsuario,
                 mes,

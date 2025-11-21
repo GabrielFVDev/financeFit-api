@@ -13,6 +13,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,7 +52,7 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> buscar(@PathVariable int id) {
+    public ResponseEntity<UsuarioDTO> buscar(@PathVariable Long id) {
         try {
             Usuario usuario = usuarioService.buscarPorId(id);
             return ResponseEntity.ok(toDto(usuario));
@@ -73,7 +75,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> atualizar(@PathVariable int id, @Valid @RequestBody UsuarioDTO dto) {
+    public ResponseEntity<UsuarioDTO> atualizar(@PathVariable Long id, @Valid @RequestBody UsuarioDTO dto) {
         try {
             Usuario dadosAtualizados = toEntity(dto);
             Usuario atualizado = usuarioService.atualizarUsuario(id, dadosAtualizados);
@@ -84,7 +86,7 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable int id) {
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
         try {
             usuarioService.deletarUsuario(id);
             return ResponseEntity.noContent().build();
@@ -105,7 +107,7 @@ public class UsuarioController {
     }
 
     @PatchMapping("/{id}/senha")
-    public ResponseEntity<UsuarioDTO> alterarSenha(@PathVariable int id, @RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<UsuarioDTO> alterarSenha(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
         try {
             String novaSenha = body.get("senha");
             if (novaSenha == null || novaSenha.isEmpty()) {
@@ -121,7 +123,7 @@ public class UsuarioController {
     }
 
     @PatchMapping("/{id}/meta")
-    public ResponseEntity<UsuarioDTO> atualizarMeta(@PathVariable int id, @RequestBody java.util.Map<String, Double> body) {
+    public ResponseEntity<UsuarioDTO> atualizarMeta(@PathVariable Long id, @RequestBody java.util.Map<String, Double> body) {
         try {
             Double novaMeta = body.get("metaMensal");
             if (novaMeta == null || novaMeta < 0) {
@@ -137,7 +139,7 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}/resumo")
-    public ResponseEntity<java.util.Map<String, Object>> resumoFinanceiro(@PathVariable int id) {
+    public ResponseEntity<java.util.Map<String, Object>> resumoFinanceiro(@PathVariable Long id) {
         try {
             java.util.Map<String, Object> resumo = usuarioService.resumoFinanceiro(id);
             return ResponseEntity.ok(resumo);
@@ -148,7 +150,7 @@ public class UsuarioController {
 
     @GetMapping("/{id}/resumo/{mes}/{ano}")
     public ResponseEntity<java.util.Map<String, Object>> resumoFinanceiroPeriodo(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @PathVariable Integer mes,
             @PathVariable Integer ano) {
         try {
@@ -168,7 +170,7 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}/despesas")
-    public ResponseEntity<java.util.List<DespesaDTO>> listarDespesasPorUsuario(@PathVariable int id) {
+    public ResponseEntity<java.util.List<DespesaDTO>> listarDespesasPorUsuario(@PathVariable Long id) {
         try {
             java.util.List<Despesa> despesas = despesaService.listar(id);
             java.util.List<DespesaDTO> despesasDTO = despesas.stream()
@@ -181,7 +183,7 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}/receitas")
-    public ResponseEntity<java.util.List<ReceitaDTO>> listarReceitasPorUsuario(@PathVariable int id) {
+    public ResponseEntity<java.util.List<ReceitaDTO>> listarReceitasPorUsuario(@PathVariable Long id) {
         try {
             java.util.List<Receita> receitas = receitaService.listar(id);
             java.util.List<ReceitaDTO> receitasDTO = receitas.stream()
@@ -195,7 +197,7 @@ public class UsuarioController {
 
     @PostMapping("/{id}/despesas")
     public ResponseEntity<DespesaDTO> criarDespesa(
-            @PathVariable int id,
+            @PathVariable Long id,
             @Valid @RequestBody CreateDespesaDTO createDespesaDTO) {
         try {
             // Validar que o ID do path corresponde ao ID do body
@@ -227,7 +229,7 @@ public class UsuarioController {
 
     @PostMapping("/{id}/receitas")
     public ResponseEntity<ReceitaDTO> criarReceita(
-            @PathVariable int id,
+            @PathVariable Long id,
             @Valid @RequestBody CreateReceitaDTO createReceitaDTO) {
         try {
             // Validar que o ID do path corresponde ao ID do body
@@ -255,6 +257,42 @@ public class UsuarioController {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao criar receita: " + e.getMessage());
         }
+    }
+
+    // Endpoint para obter dados do usuário autenticado
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioDTO> me() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = auth.getName();
+        Usuario usuario = usuarioService.buscarPorEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        return ResponseEntity.ok(toDto(usuario));
+    }
+
+    // Endpoint para atualizar parcialmente dados do usuário autenticado
+    @PatchMapping("/me")
+    public ResponseEntity<UsuarioDTO> atualizarMe(@RequestBody UpdateUsuarioDTO update) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = auth.getName();
+        Usuario atualizado = usuarioService.atualizarUsuarioPorEmail(email, update.getNome(), update.getSenha(), update.getMetaMensal());
+        return ResponseEntity.ok(toDto(atualizado));
+    }
+
+    // Endpoint para deletar a própria conta
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deletarMe() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = auth.getName();
+        usuarioService.deletarUsuarioPorEmail(email);
+        return ResponseEntity.noContent().build();
     }
 
     private Usuario toEntity(UsuarioDTO dto) {

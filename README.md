@@ -20,8 +20,9 @@
 - [Pré-requisitos](#-pré-requisitos)
 - [Instalação e Configuração](#-instalação-e-configuração)
 - [Endpoints da API](#-endpoints-da-api)
-  - [Autenticação](#autenticação)
-  - [Usuários](#usuários)
+  - [Autenticacao](#autenticacao)
+  - [Usuarios](#usuarios)
+  - [Gerenciamento da Propria Conta](#-gerenciamento-da-própria-conta-usuário-autenticado)
   - [Categorias](#categorias)
   - [Despesas](#despesas)
   - [Receitas](#receitas)
@@ -181,7 +182,7 @@ Content-Type: application/json
 
 ---
 
-### 👤 Usuários
+### 👤 Usuarios
 
 > 🔒 **Nota:** Todos os endpoints abaixo requerem autenticação JWT no header:  
 > `Authorization: Bearer {seu-token-aqui}`
@@ -496,7 +497,7 @@ Content-Type: application/json
   "data": "2025-11-05",
   "descricao": "Salário",
   "idUsuario": 1,
-  "idCategoria": 4 // Opcional
+  "idCategoria": 4
 }
 ```
 
@@ -546,6 +547,77 @@ Authorization: Bearer {token}
 ```
 
 **Response:** `204 No Content`
+
+---
+
+### 🔐 Gerenciamento da Própria Conta (Usuário Autenticado)
+
+> 🔒 **Nota:** Todos os endpoints abaixo requerem autenticação JWT no header:  
+> `Authorization: Bearer {seu-token-aqui}`
+
+#### Obter dados do usuário autenticado
+```http
+GET /usuarios/me
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "nome": "João Silva",
+  "email": "joao@email.com",
+  "dataCriacao": "2025-11-01",
+  "metaMensal": 2000.00
+}
+```
+
+#### Atualizar dados do usuário autenticado
+```http
+PATCH /usuarios/me
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body (todos os campos são opcionais):**
+```json
+{
+  "nome": "João Silva Atualizado",
+  "email": "joao.novo@email.com",
+  "senha": "novaSenhaSegura123",
+  "metaMensal": 2500.00
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "nome": "João Silva Atualizado",
+  "email": "joao.novo@email.com",
+  "dataCriacao": "2025-11-01",
+  "metaMensal": 2500.00
+}
+```
+
+> ⚠️ **Importante:** 
+> - Você pode atualizar apenas os campos desejados (atualização parcial)
+> - A senha será automaticamente criptografada
+> - O email deve ser único no sistema
+
+#### Deletar a própria conta
+```http
+DELETE /usuarios/me
+Authorization: Bearer {token}
+```
+
+**Response:** `204 No Content`
+
+> ⚠️ **Atenção:** Esta ação é **IRREVERSÍVEL** e irá:
+> - Remover permanentemente sua conta
+> - Deletar todas as suas despesas
+> - Deletar todas as suas receitas
+> - Não é possível recuperar os dados após a exclusão
 
 ---
 
@@ -617,6 +689,39 @@ curl -X POST "http://localhost:8080/receitas" \
 #### 6. Ver resumo financeiro do mês
 ```bash
 curl -X GET http://localhost:8080/usuarios/1/resumo/11/2025 \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+#### 7. Ver seus próprios dados (usuário autenticado)
+```bash
+curl -X GET http://localhost:8080/usuarios/me \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+#### 8. Atualizar seu nome
+```bash
+curl -X PATCH http://localhost:8080/usuarios/me \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "nome": "João Silva Junior"
+  }'
+```
+
+#### 9. Atualizar seu email e senha
+```bash
+curl -X PATCH http://localhost:8080/usuarios/me \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "email": "joao.novo@email.com",
+    "senha": "novaSenhaSegura123"
+  }'
+```
+
+#### 10. Deletar sua conta (CUIDADO!)
+```bash
+curl -X DELETE http://localhost:8080/usuarios/me \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
 

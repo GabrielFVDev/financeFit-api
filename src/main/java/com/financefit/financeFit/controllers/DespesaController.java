@@ -48,7 +48,7 @@ public class DespesaController {
     }
 
     @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<List<DespesaDTO>> listarPorUsuario(@PathVariable int idUsuario) {
+    public ResponseEntity<List<DespesaDTO>> listarPorUsuario(@PathVariable Long idUsuario) {
         try {
             if (idUsuario <= 0) {
                 throw new IllegalArgumentException("ID do usuário inválido");
@@ -66,7 +66,7 @@ public class DespesaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DespesaDTO> buscarPorId(@PathVariable int id) {
+    public ResponseEntity<DespesaDTO> buscarPorId(@PathVariable Long id) {
         try {
             Despesa despesa = despesaService.buscarPorId(id);
             DespesaDTO despesaDTO = convertToDespesaDTO(despesa);
@@ -80,7 +80,7 @@ public class DespesaController {
 
     @PutMapping("/{id}")
     public ResponseEntity<DespesaDTO> atualizar(
-            @PathVariable int id,
+            @PathVariable Long id,
             @Valid @RequestBody CreateDespesaDTO createDespesaDTO) {
         try {
             if (createDespesaDTO.getIdUsuario() <= 0) {
@@ -106,7 +106,7 @@ public class DespesaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Integer id) {
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
         try {
             despesaService.deletar(id);
             return ResponseEntity.noContent().build();

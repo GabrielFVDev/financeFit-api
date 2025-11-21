@@ -11,7 +11,7 @@ public class Receita {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receita_id")
-    private int id;
+    private Long id;
 
     @Column(name = "valor", nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
@@ -37,7 +37,7 @@ public class Receita {
     public Receita() {
     }
 
-    public Receita(int id, BigDecimal valor, LocalDate data, String descricao, Usuario usuario, Categoria categoria) {
+    public Receita(Long id, BigDecimal valor, LocalDate data, String descricao, Usuario usuario, Categoria categoria) {
         this.id = id;
         this.valor = valor;
         this.data = data;
@@ -47,11 +47,11 @@ public class Receita {
         this.tipo = TipoTransacao.RECEITA; // Garantir que o tipo seja RECEITA
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

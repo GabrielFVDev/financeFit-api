@@ -20,7 +20,7 @@ public class DespesaService {
     @Autowired
     private CategoriaService categoriaService;
 
-    public Despesa salvar(Despesa despesa, int idUsuario, Long idCategoria) { // Alterado para Long
+    public Despesa salvar(Despesa despesa, Long idUsuario, Long idCategoria) { // Alterado para Long
         despesa.setUsuario(usuarioService.buscarPorId(idUsuario));
         despesa.setCategoria(categoriaService.listarTodas()
                 .stream()
@@ -30,16 +30,16 @@ public class DespesaService {
         return despesaRepository.save(despesa);
     }
 
-    public List<Despesa> listar(int idUsuario) {
+    public List<Despesa> listar(Long idUsuario) {
         return despesaRepository.findByUsuarioUserId(idUsuario);
     }
 
-    public Despesa buscarPorId(int id) {
+    public Despesa buscarPorId(Long id) {
         return despesaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Despesa não encontrada"));
     }
 
-    public Despesa atualizar(int id, Despesa despesaAtualizada, int idUsuario, Long idCategoria) { // Alterado para Long
+    public Despesa atualizar(Long id, Despesa despesaAtualizada, Long idUsuario, Long idCategoria) { // Alterado para Long
         Despesa despesaExistente = buscarPorId(id);
         despesaExistente.setValor(despesaAtualizada.getValor());
         despesaExistente.setData(despesaAtualizada.getData());
@@ -53,7 +53,7 @@ public class DespesaService {
         return despesaRepository.save(despesaExistente);
     }
 
-    public void deletar(int id) {
+    public void deletar(Long id) {
         despesaRepository.deleteById(id);
     }
 }

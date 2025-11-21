@@ -10,14 +10,14 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
-public interface ReceitaRepository extends JpaRepository<Receita, Integer> {
+public interface ReceitaRepository extends JpaRepository<Receita, Long> {
     @Query("SELECT SUM(r.valor) FROM Receita r WHERE r.usuario.userId = :idUsuario AND MONTH(r.data) = :mes AND YEAR(r.data) = :ano")
     BigDecimal calcularTotalReceitaNoMes(
-            @Param("idUsuario") int idUsuario,
+            @Param("idUsuario") Long idUsuario,
             @Param("mes") int mes,
             @Param("ano") int ano
     );
 
     @Query("SELECT r FROM Receita r JOIN FETCH r.usuario LEFT JOIN FETCH r.categoria WHERE r.usuario.userId = :idUsuario")
-    List<Receita> findByUsuarioUserId(@Param("idUsuario") int idUsuario);
+    List<Receita> findByUsuarioUserId(@Param("idUsuario") Long idUsuario);
 }

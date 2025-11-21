@@ -18,7 +18,7 @@ public class CreateReceitaDTO {
 
     @NotNull(message = "ID do usuário é obrigatório")
     @Positive(message = "ID do usuário deve ser positivo")
-    private Integer idUsuario;
+    private Long idUsuario;
 
     @NotNull(message = "ID da categoria é obrigatório")
     private Long idCategoria;
@@ -28,7 +28,7 @@ public class CreateReceitaDTO {
     public CreateReceitaDTO() {
     }
 
-    public CreateReceitaDTO(BigDecimal valor, LocalDate data, String descricao, Integer idUsuario, Long idCategoria, TipoTransacao tipo) {
+    public CreateReceitaDTO(BigDecimal valor, LocalDate data, String descricao, Long idUsuario, Long idCategoria, TipoTransacao tipo) {
         this.valor = valor;
         this.data = data;
         this.descricao = descricao;
@@ -61,11 +61,11 @@ public class CreateReceitaDTO {
         this.descricao = descricao;
     }
 
-    public Integer getIdUsuario() {
+    public Long getIdUsuario() {
         return idUsuario;
     }
 
-    public void setIdUsuario(Integer idUsuario) {
+    public void setIdUsuario(Long idUsuario) {
         this.idUsuario = idUsuario;
     }
 
