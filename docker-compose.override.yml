@@ -1,0 +1,28 @@
+# docker-compose.override.yml
+# Este arquivo é automaticamente usado pelo docker-compose para sobrescrever configurações
+# Ideal para desenvolvimento local
+
+version: '3.8'
+
+services:
+  financefit-api:
+    # Mapeamento de volumes para desenvolvimento (hot reload)
+    volumes:
+      - ./src:/app/src
+      - ./target:/app/target
+    environment:
+      # Configurações específicas para desenvolvimento
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_PROFILES_ACTIVE: "docker,dev"
+    # Reiniciar automaticamente se a aplicação falhar
+    restart: on-failure
+    
+  mysql-db:
+    # Expor a porta do MySQL para acesso externo durante desenvolvimento
+    ports:
+      - "3307:3306"
+    # Configurações extras para desenvolvimento
+    environment:
+      MYSQL_ROOT_HOST: "%"
+    # Logs mais verbosos para debugging
+    command: --general-log=1 --general-log-file=/var/lib/mysql/general.log

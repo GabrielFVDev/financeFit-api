@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Banco de dados MySQL
+  mysql-db:
+    image: mysql:8.0
+    container_name: financefit-mysql
+    environment:
+      MYSQL_DATABASE: financefit
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_USER: financefit
+      MYSQL_PASSWORD: financefit123
+    ports:
+      - "3307:3306"  # Mapear para porta 3307 para evitar conflito
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - financefit-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Aplicação Spring Boot
+  financefit-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: financefit-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/financefit
+      SPRING_DATASOURCE_USERNAME: financefit
+      SPRING_DATASOURCE_PASSWORD: financefit123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: financefit_docker_secret_key_2025_muito_segura_complexa
+      JWT_EXPIRATION: 86400000
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - financefit-network
+    restart: unless-stopped
+
+# Volumes para persistir dados
+volumes:
+  mysql_data:
+    driver: local
+
+# Rede personalizada
+networks:
+  financefit-network:
+    driver: bridge

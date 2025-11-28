@@ -5,9 +5,10 @@
   ![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java)
   ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.7-brightgreen?style=for-the-badge&logo=springboot)
   ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=for-the-badge&logo=mysql)
+  ![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker)
   ![JWT](https://img.shields.io/badge/JWT-Authentication-000000?style=for-the-badge&logo=jsonwebtokens)
   
-  **API RESTful para controle de finanças pessoais com autenticação JWT**
+  **API RESTful para gerenciamento de finanças pessoais com autenticação JWT e suporte Docker**
   
 </div>
 
@@ -17,84 +18,139 @@
 
 - [Sobre o Projeto](#-sobre-o-projeto)
 - [Tecnologias](#-tecnologias)
-- [Pré-requisitos](#-pré-requisitos)
-- [Instalação e Configuração](#-instalação-e-configuração)
+- [Funcionalidades](#-funcionalidades)
+- [Como Executar](#-como-executar)
+  - [Docker (Recomendado)](#-com-docker-recomendado)
+  - [Execução Local](#-execução-local-sem-docker)
 - [Endpoints da API](#-endpoints-da-api)
-  - [Autenticacao](#autenticacao)
-  - [Usuarios](#usuarios)
-  - [Gerenciamento da Propria Conta](#-gerenciamento-da-própria-conta-usuário-autenticado)
-  - [Categorias](#categorias)
-  - [Despesas](#despesas)
-  - [Receitas](#receitas)
-- [Exemplos de Uso](#-exemplos-de-uso)
+- [Testes](#-testes)
+- [Documentação Adicional](#-documentação-adicional)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 
 ---
 
 ## 🎯 Sobre o Projeto
 
-O **FinanceFit** é uma API completa para gerenciamento de finanças pessoais que permite:
+O **FinanceFit** é uma API REST completa para gerenciamento de finanças pessoais que oferece controle total sobre suas receitas e despesas com segurança e praticidade.
 
-✅ Cadastro e autenticação de usuários com JWT  
-✅ Gerenciamento de despesas, receitas e categorias  
-✅ Definição de metas mensais de gastos  
-✅ Relatórios financeiros por período  
-✅ Controle total das suas finanças  
+### ✨ Funcionalidades
+
+- 🔐 **Autenticação JWT** - Sistema seguro de autenticação stateless
+- 👤 **Gestão de Usuários** - Cadastro, login e gerenciamento de perfil
+- 💸 **Controle de Despesas** - Registre e categorize seus gastos
+- 💰 **Controle de Receitas** - Acompanhe suas fontes de renda
+- 📊 **Categorias** - Organize suas transações
+- 🎯 **Metas Mensais** - Defina e acompanhe limites de gastos
+- 📈 **Relatórios** - Visualize suas finanças por período
+- 🔒 **Segurança** - Spring Security com criptografia BCrypt
+- ✅ **Validações** - Bean Validation para garantir integridade dos dados
+- 🐳 **Docker Ready** - Deploy simplificado com containers
 
 ---
 
 ## 🛠 Tecnologias
 
-Este projeto foi desenvolvido com as seguintes tecnologias:
-
-- **Java 17** - Linguagem de programação
-- **Spring Boot 3.5.7** - Framework principal
-- **Spring Security** - Segurança e autenticação
-- **JWT (JSON Web Token)** - Autenticação stateless
-- **Spring Data JPA** - Persistência de dados
-- **Hibernate** - ORM
-- **MySQL 8.0** - Banco de dados
-- **Maven** - Gerenciador de dependências
-- **Bean Validation** - Validação de dados
-
----
-
-## 📋 Pré-requisitos
-
-Antes de começar, você precisará ter instalado em sua máquina:
-
-- ☕ [Java 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) ou superior
-- 📦 [Maven 3.6+](https://maven.apache.org/download.cgi)
-- 🗄️ [MySQL 8.0+](https://dev.mysql.com/downloads/mysql/)
-- 🔧 Git
+| Tecnologia | Versão | Descrição |
+|-----------|--------|-----------|
+| **Java** | 17 | Linguagem de programação |
+| **Spring Boot** | 3.5.7 | Framework principal |
+| **Spring Security** | - | Autenticação e autorização |
+| **Spring Data JPA** | - | Persistência de dados |
+| **Hibernate** | - | ORM (Object-Relational Mapping) |
+| **MySQL** | 8.0 | Banco de dados relacional |
+| **H2 Database** | - | Banco em memória para testes |
+| **JWT (jjwt)** | 0.12.5 | Tokens de autenticação |
+| **Bean Validation** | - | Validação de dados |
+| **Maven** | 3.9+ | Gerenciador de dependências |
+| **Docker** | - | Containerização |
+| **Docker Compose** | - | Orquestração de containers |
 
 ---
 
-## 🚀 Instalação e Configuração
+## 🚀 Como Executar
 
-### 1️⃣ Clone o repositório
+### 🐳 Com Docker (Recomendado)
+
+A forma mais rápida e fácil de executar o projeto:
+
+#### 1. Certifique-se de ter o Docker instalado
+
+```bash
+docker --version
+docker-compose --version
+```
+
+#### 2. Inicie os containers
+
+```bash
+# Dar permissão ao script
+chmod +x docker.sh
+
+# Iniciar aplicação e banco de dados
+./docker.sh start
+```
+
+#### 3. Acessar a aplicação
+
+- **API**: http://localhost:8080
+- **MySQL**: localhost:3307 (usuário: `financefit`, senha: `financefit123`)
+
+#### 4. Parar os containers
+
+```bash
+./docker.sh stop
+```
+
+#### Outros comandos úteis:
+
+```bash
+# Parar o serviço Docker
+sudo systemctl stop docker
+
+# Desabilitar Docker na inicialização
+sudo systemctl disable docker
+
+# Ver logs da API
+docker logs -f financefit-api
+
+# Ver logs do MySQL
+docker logs -f financefit-mysql
+
+# Acessar o banco de dados
+docker exec -it financefit-mysql mysql -u financefit -pfinancefit123 financefit
+```
+
+> 📖 Para mais detalhes sobre Docker, consulte [DOCKER-SETUP.md](./DOCKER-SETUP.md)
+
+---
+
+### 💻 Execução Local (sem Docker)
+
+#### Pré-requisitos
+
+- ☕ Java 17+
+- 📦 Maven 3.6+
+- 🗄️ MySQL 8.0+
+
+#### 1. Clone o repositório
 
 ```bash
 git clone <url-do-repositorio>
 cd spring
 ```
 
-### 2️⃣ Configure o banco de dados
-
-**Crie o banco de dados no MySQL:**
+#### 2. Configure o banco de dados MySQL
 
 ```sql
 CREATE DATABASE financefit;
 ```
 
-### 3️⃣ Configure as variáveis de ambiente
+#### 3. Configure o arquivo `application.properties`
 
-Edite o arquivo `src/main/resources/application.properties`:
+Edite `src/main/resources/application.properties`:
 
 ```properties
-spring.application.name=financeFit
-
-# Configuração do banco de dados
+# Database Configuration
 spring.datasource.url=jdbc:mysql://localhost:3306/financefit
 spring.datasource.username=root
 spring.datasource.password=SUA_SENHA_AQUI
@@ -102,37 +158,33 @@ spring.datasource.password=SUA_SENHA_AQUI
 # JPA/Hibernate
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 
 # JWT Configuration
 jwt.secret=SUA_CHAVE_SECRETA_AQUI
 jwt.expiration=86400000
 ```
 
-> ⚠️ **IMPORTANTE:** Em produção, use variáveis de ambiente para dados sensíveis!
+> ⚠️ **IMPORTANTE**: Altere `SUA_SENHA_AQUI` e `SUA_CHAVE_SECRETA_AQUI` para valores reais!
 
-### 4️⃣ Compile e execute o projeto
+#### 4. Execute o projeto
 
 ```bash
-# Dar permissão ao Maven Wrapper (Linux/Mac)
-chmod +x mvnw
-
-# Compilar o projeto
+# Compilar
 ./mvnw clean install
 
-# Executar a aplicação
+# Executar
 ./mvnw spring-boot:run
 ```
 
-A API estará disponível em: **`http://localhost:8080`**
+A API estará disponível em **http://localhost:8080**
 
 ---
 
 ## 🔌 Endpoints da API
 
-### 🔐 Autenticação
+### 🔐 Autenticação (Públicos)
 
-#### Registrar novo usuário
+#### Registrar Usuário
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -148,7 +200,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (200 OK):**
+**Response (200):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -171,7 +223,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (200 OK):**
+**Response (200):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -182,62 +234,42 @@ Content-Type: application/json
 
 ---
 
-### 👤 Usuarios
+### 👤 Usuários (Autenticados)
 
-> 🔒 **Nota:** Todos os endpoints abaixo requerem autenticação JWT no header:  
-> `Authorization: Bearer {seu-token-aqui}`
+> 🔒 **Todos os endpoints abaixo requerem:**  
+> `Authorization: Bearer {seu-token-jwt}`
 
-#### Criar usuário
+#### Listar todos os usuários
 ```http
-POST /usuarios
-Authorization: Bearer {token}
-Content-Type: application/json
-```
-
-**Body:**
-```json
-{
-  "nome": "Maria Santos",
-  "email": "maria@email.com",
-  "senha": "senha456"
-}
+GET /usuarios
 ```
 
 #### Buscar usuário por ID
 ```http
 GET /usuarios/{id}
-Authorization: Bearer {token}
 ```
 
-**Response:**
-```json
+#### Criar usuário
+```http
+POST /usuarios
+Content-Type: application/json
+
 {
-  "id": 1,
-  "nome": "João Silva",
-  "email": "joao@email.com"
+  "nome": "Maria Santos",
+  "email": "maria@email.com",
+  "senha": "senha456",
+  "metaMensal": 1500.00
 }
 ```
 
-#### Listar todos os usuários
-```http
-GET /usuarios
-Authorization: Bearer {token}
-```
-
-**Response:**
+**Response (201):**
 ```json
-[
-  {
-    "id": 1,
-    "nome": "João Silva",
-    "email": "joao@email.com"
-  },
-  {
-    "id": 2,
-    "nome": "Maria Santos",
-    "email": "maria@email.com"
-  }
-]
+{
+  "id": 2,
+  "nome": "Maria Santos",
+  "email": "maria@email.com",
+  "metaMensal": 1500.00
+}
 ```
 
 #### Buscar usuário por email
@@ -550,73 +582,293 @@ Authorization: Bearer {token}
 
 ---
 
-### 🔐 Gerenciamento da Própria Conta (Usuário Autenticado)
+## 🧪 Testes
 
-> 🔒 **Nota:** Todos os endpoints abaixo requerem autenticação JWT no header:  
-> `Authorization: Bearer {seu-token-aqui}`
+O projeto inclui testes automatizados para garantir a qualidade do código.
 
-#### Obter dados do usuário autenticado
-```http
-GET /usuarios/me
-Authorization: Bearer {token}
+### Executar todos os testes
+
+```bash
+./mvnw test
 ```
 
-**Response:**
-```json
-{
-  "id": 1,
-  "nome": "João Silva",
-  "email": "joao@email.com",
-  "dataCriacao": "2025-11-01",
-  "metaMensal": 2000.00
-}
+### Executar testes com relatório de cobertura
+
+```bash
+./mvnw clean test
 ```
 
-#### Atualizar dados do usuário autenticado
-```http
-PATCH /usuarios/me
-Authorization: Bearer {token}
-Content-Type: application/json
+### Testes Implementados
+
+O projeto contém testes unitários e de integração para:
+
+- ✅ **Controllers**: Testes de API (UsuarioController)
+- ✅ **Services**: Lógica de negócio (UsuarioService, CategoriaService, DespesaService, ReceitaService)
+- ✅ **Integração**: Testes de contexto da aplicação
+
+### Configuração de Testes
+
+Os testes utilizam:
+- **H2 Database** - Banco de dados em memória
+- **Spring Boot Test** - Framework de testes
+- **JUnit 5** - Framework de testes unitários
+- **Mockito** - Mock de dependências
+
+Configurações em `src/test/resources/application-test.properties`
+
+---
+
+## 🔒 Segurança
+
+### Autenticação JWT
+
+1. **Registre-se ou faça login** para obter um token JWT
+2. **Inclua o token** em todas as requisições autenticadas:
+   ```
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ```
+3. **Token válido por 24 horas** (86400000 ms)
+
+### Endpoints Públicos
+
+Apenas 2 endpoints são públicos (não requerem autenticação):
+- `POST /api/auth/register` - Registro de novos usuários
+- `POST /api/auth/login` - Login
+
+Todos os outros endpoints requerem autenticação JWT.
+
+### Criptografia
+
+- Senhas são criptografadas com **BCrypt**
+- Tokens JWT assinados com chave secreta configurável
+- Configuração via `application.properties`
+
+---
+
+## 📂 Estrutura do Projeto
+
+```
+spring/
+├── src/
+│   ├── main/
+│   │   ├── java/com/financefit/financeFit/
+│   │   │   ├── controllers/           # Endpoints REST
+│   │   │   │   ├── AuthController.java
+│   │   │   │   ├── CategoriaController.java
+│   │   │   │   ├── DespesaController.java
+│   │   │   │   ├── ReceitaController.java
+│   │   │   │   └── UsuarioController.java
+│   │   │   ├── dtos/                  # Data Transfer Objects
+│   │   │   ├── entities/              # Entidades JPA
+│   │   │   ├── exception/             # Tratamento de exceções
+│   │   │   ├── repositories/          # Acesso a dados
+│   │   │   ├── security/              # Configurações de segurança
+│   │   │   ├── services/              # Lógica de negócio
+│   │   │   └── FinanceFitApplication.java
+│   │   └── resources/
+│   │       ├── application.properties        # Configuração padrão
+│   │       └── application-docker.properties # Configuração Docker
+│   └── test/                          # Testes automatizados
+│       ├── java/com/financefit/financeFit/
+│       │   ├── controllers/
+│       │   └── services/
+│       └── resources/
+│           └── application-test.properties
+├── docker/
+│   └── init.sql                       # Script de inicialização do BD
+├── target/                            # Arquivos compilados
+├── docker-compose.yml                 # Configuração Docker Compose
+├── docker-compose.override.yml        # Sobrescritas do Docker
+├── docker.sh                          # Script auxiliar Docker
+├── Dockerfile                         # Imagem Docker da aplicação
+├── pom.xml                            # Dependências Maven
+├── DOCKER-SETUP.md                    # Documentação Docker
+└── README.md                          # Este arquivo
 ```
 
-**Body (todos os campos são opcionais):**
-```json
-{
-  "nome": "João Silva Atualizado",
-  "email": "joao.novo@email.com",
-  "senha": "novaSenhaSegura123",
-  "metaMensal": 2500.00
-}
+---
+
+## 📚 Documentação Adicional
+
+- 📖 [**DOCKER-SETUP.md**](./DOCKER-SETUP.md) - Guia completo sobre Docker
+- 📝 [**DTO_VALIDATION_FIXES.md**](./DTO_VALIDATION_FIXES.md) - Validações implementadas
+- 🔄 [**UPDATES.md**](./UPDATES.md) - Histórico de atualizações
+- 🐳 [**README-Docker.md**](./README-Docker.md) - Informações adicionais sobre Docker
+
+---
+
+## 💡 Exemplos de Uso
+
+### Fluxo Completo de Uso
+
+#### 1. Registrar-se
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "João Silva",
+    "email": "joao@email.com",
+    "senha": "senha123",
+    "metaMensal": 2000.00
+  }'
 ```
 
-**Response:**
-```json
-{
-  "id": 1,
-  "nome": "João Silva Atualizado",
-  "email": "joao.novo@email.com",
-  "dataCriacao": "2025-11-01",
-  "metaMensal": 2500.00
-}
+#### 2. Criar uma Categoria
+
+```bash
+curl -X POST http://localhost:8080/categorias \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "nome": "Alimentação"
+  }'
 ```
 
-> ⚠️ **Importante:** 
-> - Você pode atualizar apenas os campos desejados (atualização parcial)
-> - A senha será automaticamente criptografada
-> - O email deve ser único no sistema
+#### 3. Registrar uma Despesa
 
-#### Deletar a própria conta
-```http
-DELETE /usuarios/me
-Authorization: Bearer {token}
+```bash
+curl -X POST http://localhost:8080/despesas \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "valor": 150.50,
+    "data": "2025-11-27",
+    "descricao": "Compras no supermercado",
+    "idUsuario": 1,
+    "idCategoria": 1
+  }'
 ```
 
-**Response:** `204 No Content`
+#### 4. Registrar uma Receita
 
-> ⚠️ **Atenção:** Esta ação é **IRREVERSÍVEL** e irá:
-> - Remover permanentemente sua conta
-> - Deletar todas as suas despesas
-> - Deletar todas as suas receitas
+```bash
+curl -X POST http://localhost:8080/receitas \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "valor": 3000.00,
+    "data": "2025-11-05",
+    "descricao": "Salário",
+    "idUsuario": 1,
+    "idCategoria": 4
+  }'
+```
+
+#### 5. Ver Resumo Financeiro
+
+```bash
+curl -X GET http://localhost:8080/usuarios/1/resumo/11/2025 \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Script de Teste
+
+Um script bash está disponível para testar os endpoints:
+
+```bash
+chmod +x test-endpoints.sh
+./test-endpoints.sh
+```
+
+### Coleção Postman
+
+Importe a coleção `FinanceFit-API.postman_collection.json` no Postman para testar todos os endpoints facilmente.
+
+---
+
+## ⚙️ Variáveis de Ambiente
+
+Para produção, configure as seguintes variáveis de ambiente:
+
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `SPRING_DATASOURCE_URL` | URL do banco MySQL | `jdbc:mysql://localhost:3306/financefit` |
+| `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `financefit` |
+| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | `senha_segura_aqui` |
+| `JWT_SECRET` | Chave secreta JWT | `chave_muito_segura_e_longa_aqui` |
+| `JWT_EXPIRATION` | Tempo de expiração (ms) | `86400000` (24h) |
+
+---
+
+## 🐛 Troubleshooting
+
+### Erro: "Access denied for user"
+- Verifique as credenciais do MySQL no `application.properties`
+- Certifique-se de que o usuário tem permissões no banco
+
+### Erro: "Port 8080 already in use"
+```bash
+# Encontrar processo na porta 8080
+sudo lsof -i :8080
+
+# Matar o processo
+sudo kill -9 <PID>
+```
+
+### Erro ao conectar com o Docker
+```bash
+# Verificar status do Docker
+sudo systemctl status docker
+
+# Iniciar Docker
+sudo systemctl start docker
+
+# Verificar containers
+docker ps -a
+```
+
+### Banco de dados não inicializa
+```bash
+# Verificar logs do MySQL
+docker logs financefit-mysql
+
+# Recriar volumes
+docker-compose down -v
+docker-compose up --build
+```
+
+---
+
+## 🤝 Contribuindo
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
+
+---
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+
+---
+
+## 👨‍💻 Autor
+
+Desenvolvido com ☕ e 💚 usando Spring Boot
+
+---
+
+## 📞 Contato e Suporte
+
+- 📧 Email: [seu-email@exemplo.com](mailto:seu-email@exemplo.com)
+- 🐛 Issues: Use a aba Issues do GitHub para reportar bugs
+- 💬 Discussões: Use a aba Discussions para perguntas
+
+---
+
+<div align="center">
+  
+  **⭐ Se este projeto foi útil, considere dar uma estrela!**
+  
+  ![Spring Boot](https://img.shields.io/badge/Made%20with-Spring%20Boot-brightgreen?style=flat-square&logo=springboot)
+  ![Java](https://img.shields.io/badge/Java-17-orange?style=flat-square&logo=java)
+  ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)
+  
+</div>
 > - Não é possível recuperar os dados após a exclusão
 
 ---

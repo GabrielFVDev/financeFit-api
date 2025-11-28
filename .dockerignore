@@ -1,0 +1,19 @@
+# Ignorar arquivos desnecessários no build do Docker
+target/
+!target/financeFit-0.0.1-SNAPSHOT.jar
+.git/
+.gitignore
+README.md
+*.md
+.DS_Store
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.log
+node_modules/
+.env
+docker-compose.yml
+Dockerfile
+
