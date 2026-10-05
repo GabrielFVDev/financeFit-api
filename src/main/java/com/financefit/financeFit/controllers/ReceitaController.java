@@ -1,138 +1,111 @@
 package com.financefit.financeFit.controllers;
 
-import com.financefit.financeFit.dtos.CreateReceitaDTO;
-import com.financefit.financeFit.dtos.ReceitaDTO;
+import com.financefit.financeFit.dtos.request.ReceitaRequest;
+import com.financefit.financeFit.dtos.response.ReceitaResponse;
 import com.financefit.financeFit.entities.Receita;
+import com.financefit.financeFit.entities.Usuario;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
+import com.financefit.financeFit.mappers.ReceitaMapper;
 import com.financefit.financeFit.services.ReceitaService;
+import com.financefit.financeFit.services.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/receitas")
+@Validated
 public class ReceitaController {
 
-    @Autowired
-    private ReceitaService receitaService;
+    private final ReceitaService receitaService;
+    private final UsuarioService usuarioService;
+
+    public ReceitaController(ReceitaService receitaService, UsuarioService usuarioService) {
+        this.receitaService = receitaService;
+        this.usuarioService = usuarioService;
+    }
+
+    private Long usuarioAutenticadoId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            throw new AccessDeniedException("Usuário não autenticado");
+        }
+        Usuario usuario = usuarioService.buscarPorEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado"));
+        return usuario.getUserId();
+    }
+
+    private void garantirDono(Receita receita, Long usuarioId) {
+        if (receita.getUsuario() == null || !usuarioId.equals(receita.getUsuario().getUserId())) {
+            throw new AccessDeniedException("Acesso negado para este recurso");
+        }
+    }
+
 
     @PostMapping
-    public ResponseEntity<ReceitaDTO> criar(
-            @Valid @RequestBody CreateReceitaDTO createReceitaDTO) {
-        try {
-            if (createReceitaDTO.getIdUsuario() <= 0) {
-                throw new IllegalArgumentException("ID do usuário inválido");
-            }
-            if (createReceitaDTO.getIdCategoria() == null || createReceitaDTO.getIdCategoria() <= 0) {
-                throw new IllegalArgumentException("ID da categoria inválido");
-            }
+    public ResponseEntity<ReceitaResponse> criar(@Valid @RequestBody ReceitaRequest dto) {
+        Long usuarioId = usuarioAutenticadoId();
+        Receita criada = receitaService.salvar(ReceitaMapper.toEntity(dto), usuarioId, dto.idCategoria());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ReceitaMapper.toResponse(criada));
+    }
 
-            Receita receita = new Receita();
-            BeanUtils.copyProperties(createReceitaDTO, receita);
-
-            Receita criada = receitaService.salvar(receita, createReceitaDTO.getIdUsuario(), createReceitaDTO.getIdCategoria());
-
-            ReceitaDTO receitaDTO = convertToReceitaDTO(criada);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(receitaDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao criar receita: " + e.getMessage());
-        }
+    @GetMapping
+    public ResponseEntity<List<ReceitaResponse>> listarMinhas() {
+        Long usuarioId = usuarioAutenticadoId();
+        List<ReceitaResponse> dtos = receitaService.listar(usuarioId)
+                .stream()
+                .map(ReceitaMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<List<ReceitaDTO>> listarPorUsuario(@PathVariable Long idUsuario) {
-        try {
-            if (idUsuario <= 0) {
-                throw new IllegalArgumentException("ID do usuário inválido");
-            }
-            List<Receita> receitas = receitaService.listar(idUsuario);
-            List<ReceitaDTO> receitasDTO = receitas.stream()
-                    .map(this::convertToReceitaDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(receitasDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao listar receitas do usuário: " + e.getMessage());
+    public ResponseEntity<List<ReceitaResponse>> listarPorUsuario(
+            @PathVariable @Positive(message = "ID do usuário deve ser positivo") Long idUsuario) {
+        Long usuarioId = usuarioAutenticadoId();
+        if (!usuarioId.equals(idUsuario)) {
+            throw new AccessDeniedException("Acesso negado para este recurso");
         }
+        List<ReceitaResponse> dtos = receitaService.listar(idUsuario)
+                .stream()
+                .map(ReceitaMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReceitaDTO> buscarPorId(@PathVariable Long id) {
-        try {
-            Receita receita = receitaService.buscarPorId(id);
-            ReceitaDTO receitaDTO = convertToReceitaDTO(receita);
-            return ResponseEntity.ok(receitaDTO);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao buscar receita: " + e.getMessage());
-        }
+    public ResponseEntity<ReceitaResponse> buscarPorId(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        Long usuarioId = usuarioAutenticadoId();
+        Receita receita = receitaService.buscarPorId(id);
+        garantirDono(receita, usuarioId);
+        return ResponseEntity.ok(ReceitaMapper.toResponse(receita));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReceitaDTO> atualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody CreateReceitaDTO createReceitaDTO) {
-        try {
-            if (createReceitaDTO.getIdUsuario() == null || createReceitaDTO.getIdUsuario() <= 0) {
-                throw new IllegalArgumentException("ID do usuário inválido");
-            }
-            if (createReceitaDTO.getIdCategoria() == null || createReceitaDTO.getIdCategoria() <= 0) {
-                throw new IllegalArgumentException("ID da categoria inválido");
-            }
-
-            Receita receitaAtualizada = new Receita();
-            BeanUtils.copyProperties(createReceitaDTO, receitaAtualizada);
-
-            Receita atualizada = receitaService.atualizar(id, receitaAtualizada, createReceitaDTO.getIdUsuario(), createReceitaDTO.getIdCategoria());
-
-            ReceitaDTO receitaDTO = convertToReceitaDTO(atualizada);
-
-            return ResponseEntity.ok(receitaDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao atualizar receita: " + e.getMessage());
-        }
+    public ResponseEntity<ReceitaResponse> atualizar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id,
+            @Valid @RequestBody ReceitaRequest dto) {
+        Long usuarioId = usuarioAutenticadoId();
+        garantirDono(receitaService.buscarPorId(id), usuarioId);
+        Receita atualizada = receitaService.atualizar(id, ReceitaMapper.toEntity(dto), usuarioId, dto.idCategoria());
+        return ResponseEntity.ok(ReceitaMapper.toResponse(atualizada));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        try {
-            receitaService.deletar(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao deletar receita: " + e.getMessage());
-        }
-    }
-
-    private ReceitaDTO convertToReceitaDTO(Receita receita) {
-        ReceitaDTO dto = new ReceitaDTO();
-        BeanUtils.copyProperties(receita, dto);
-        dto.setIdUsuario(receita.getUsuario().getUserId());
-        dto.setTipo(receita.getTipo());
-
-        if (receita.getCategoria() != null) {
-            com.financefit.financeFit.dtos.CategoriaDTO categoriaDTO = new com.financefit.financeFit.dtos.CategoriaDTO();
-            categoriaDTO.setCategoriaId(receita.getCategoria().getCategoriaId());
-            categoriaDTO.setNome(receita.getCategoria().getNome());
-            dto.setCategoria(categoriaDTO);
-            dto.setIdCategoria(receita.getCategoria().getCategoriaId());
-        }
-
-        return dto;
+    public ResponseEntity<Void> deletar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        Long usuarioId = usuarioAutenticadoId();
+        garantirDono(receitaService.buscarPorId(id), usuarioId);
+        receitaService.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 }

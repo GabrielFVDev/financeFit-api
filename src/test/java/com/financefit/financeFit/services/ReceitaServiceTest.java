@@ -3,6 +3,7 @@ package com.financefit.financeFit.services;
 import com.financefit.financeFit.entities.Categoria;
 import com.financefit.financeFit.entities.Receita;
 import com.financefit.financeFit.entities.Usuario;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
 import com.financefit.financeFit.repositories.ReceitaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,15 +57,12 @@ class ReceitaServiceTest {
 
     @Test
     void deveSalvarReceitaComSucesso() {
-        // Given
         when(usuarioService.buscarPorId(1L)).thenReturn(usuario);
-        when(categoriaService.listarTodas()).thenReturn(java.util.List.of(categoria));
+        when(categoriaService.buscarPorId(1L)).thenReturn(categoria);
         when(receitaRepository.save(any(Receita.class))).thenReturn(receita);
 
-        // When
         Receita resultado = receitaService.salvar(receita, 1L, 1L);
 
-        // Then
         assertNotNull(resultado);
         assertEquals(new BigDecimal("3000.00"), resultado.getValor());
         verify(receitaRepository).save(any(Receita.class));
@@ -72,24 +70,18 @@ class ReceitaServiceTest {
 
     @Test
     void deveBuscarReceitaPorId() {
-        // Given
         when(receitaRepository.findById(1L)).thenReturn(Optional.of(receita));
 
-        // When
         Receita resultado = receitaService.buscarPorId(1L);
 
-        // Then
         assertNotNull(resultado);
         assertEquals(1L, resultado.getId());
     }
 
     @Test
     void deveLancarExcecaoQuandoReceitaNaoEncontrada() {
-        // Given
         when(receitaRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> receitaService.buscarPorId(999L));
+        assertThrows(ResourceNotFoundException.class, () -> receitaService.buscarPorId(999L));
     }
 }
-

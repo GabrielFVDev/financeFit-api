@@ -26,12 +26,12 @@ public class Usuario {
     private LocalDate dataCriacao;
 
     @Column(name = "metaMensal")
-    private double metaMensal;
+    private Double metaMensal = 0.0;
 
     public Usuario() {
     }
 
-    public Usuario(Long userId, String nome, String email, String senha, LocalDate dataCriacao, double metaMensal) {
+    public Usuario(Long userId, String nome, String email, String senha, LocalDate dataCriacao, Double metaMensal) {
         this.userId = userId;
         this.nome = nome;
         this.email = email;
@@ -80,11 +80,11 @@ public class Usuario {
         this.dataCriacao = dataCriacao;
     }
 
-    public double getMetaMensal() {
+    public Double getMetaMensal() {
         return metaMensal;
     }
 
-    public void setMetaMensal(double metaMensal) {
+    public void setMetaMensal(Double metaMensal) {
         this.metaMensal = metaMensal;
     }
 }

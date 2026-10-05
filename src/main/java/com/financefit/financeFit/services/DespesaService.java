@@ -1,59 +1,70 @@
 package com.financefit.financeFit.services;
 
+import com.financefit.financeFit.entities.Categoria;
 import com.financefit.financeFit.entities.Despesa;
+import com.financefit.financeFit.entities.Usuario;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
 import com.financefit.financeFit.repositories.DespesaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class DespesaService {
 
-    @Autowired
-    private DespesaRepository despesaRepository;
+    private final DespesaRepository despesaRepository;
+    private final UsuarioService usuarioService;
+    private final CategoriaService categoriaService;
 
-    @Autowired
-    private UsuarioService usuarioService;
+    public DespesaService(DespesaRepository despesaRepository,
+                          UsuarioService usuarioService,
+                          CategoriaService categoriaService) {
+        this.despesaRepository = despesaRepository;
+        this.usuarioService = usuarioService;
+        this.categoriaService = categoriaService;
+    }
 
-    @Autowired
-    private CategoriaService categoriaService;
+    @Transactional
+    public Despesa salvar(Despesa despesa, Long idUsuario, Long idCategoria) {
+        Usuario usuario = usuarioService.buscarPorId(idUsuario);
+        Categoria categoria = categoriaService.buscarPorId(idCategoria);
 
-    public Despesa salvar(Despesa despesa, Long idUsuario, Long idCategoria) { // Alterado para Long
-        despesa.setUsuario(usuarioService.buscarPorId(idUsuario));
-        despesa.setCategoria(categoriaService.listarTodas()
-                .stream()
-                .filter(c -> Objects.equals(c.getCategoriaId(), idCategoria)) // Usar Objects.equals para comparar Long
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada")));
+        despesa.setUsuario(usuario);
+        despesa.setCategoria(categoria);
         return despesaRepository.save(despesa);
     }
 
+    @Transactional(readOnly = true)
     public List<Despesa> listar(Long idUsuario) {
+        usuarioService.buscarPorId(idUsuario);
         return despesaRepository.findByUsuarioUserId(idUsuario);
     }
 
+    @Transactional(readOnly = true)
     public Despesa buscarPorId(Long id) {
         return despesaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Despesa não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Despesa não encontrada com ID: " + id));
     }
 
-    public Despesa atualizar(Long id, Despesa despesaAtualizada, Long idUsuario, Long idCategoria) { // Alterado para Long
+    @Transactional
+    public Despesa atualizar(Long id, Despesa despesaAtualizada, Long idUsuario, Long idCategoria) {
         Despesa despesaExistente = buscarPorId(id);
+        Usuario usuario = usuarioService.buscarPorId(idUsuario);
+        Categoria categoria = categoriaService.buscarPorId(idCategoria);
+
         despesaExistente.setValor(despesaAtualizada.getValor());
         despesaExistente.setData(despesaAtualizada.getData());
         despesaExistente.setDescricao(despesaAtualizada.getDescricao());
-        despesaExistente.setUsuario(usuarioService.buscarPorId(idUsuario)); // Ensure user is the same or updated
-        despesaExistente.setCategoria(categoriaService.listarTodas()
-                .stream()
-                .filter(c -> Objects.equals(c.getCategoriaId(), idCategoria)) // Usar Objects.equals para comparar Long
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada")));
+        despesaExistente.setUsuario(usuario);
+        despesaExistente.setCategoria(categoria);
+
         return despesaRepository.save(despesaExistente);
     }
 
+    @Transactional
     public void deletar(Long id) {
+        buscarPorId(id);
         despesaRepository.deleteById(id);
     }
 }

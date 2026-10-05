@@ -1,136 +1,111 @@
 package com.financefit.financeFit.controllers;
 
-import com.financefit.financeFit.dtos.CreateDespesaDTO;
-import com.financefit.financeFit.dtos.DespesaDTO;
+import com.financefit.financeFit.dtos.request.DespesaRequest;
+import com.financefit.financeFit.dtos.response.DespesaResponse;
 import com.financefit.financeFit.entities.Despesa;
+import com.financefit.financeFit.entities.Usuario;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
+import com.financefit.financeFit.mappers.DespesaMapper;
 import com.financefit.financeFit.services.DespesaService;
+import com.financefit.financeFit.services.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/despesas")
+@Validated
 public class DespesaController {
 
-    @Autowired
-    private DespesaService despesaService;
+    private final DespesaService despesaService;
+    private final UsuarioService usuarioService;
+
+    public DespesaController(DespesaService despesaService, UsuarioService usuarioService) {
+        this.despesaService = despesaService;
+        this.usuarioService = usuarioService;
+    }
+
+    private Long usuarioAutenticadoId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            throw new AccessDeniedException("Usuário não autenticado");
+        }
+        Usuario usuario = usuarioService.buscarPorEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado"));
+        return usuario.getUserId();
+    }
+
+    private void garantirDono(Despesa despesa, Long usuarioId) {
+        if (despesa.getUsuario() == null || !usuarioId.equals(despesa.getUsuario().getUserId())) {
+            throw new AccessDeniedException("Acesso negado para este recurso");
+        }
+    }
+
 
     @PostMapping
-    public ResponseEntity<DespesaDTO> criar(
-            @Valid @RequestBody CreateDespesaDTO createDespesaDTO) {
-        try {
-            if (createDespesaDTO.getIdUsuario() <= 0) {
-                throw new IllegalArgumentException("ID do usuário inválido");
-            }
-            if (createDespesaDTO.getIdCategoria() <= 0) {
-                throw new IllegalArgumentException("ID da categoria inválido");
-            }
+    public ResponseEntity<DespesaResponse> criar(@Valid @RequestBody DespesaRequest dto) {
+        Long usuarioId = usuarioAutenticadoId();
+        Despesa criada = despesaService.salvar(DespesaMapper.toEntity(dto), usuarioId, dto.idCategoria());
+        return ResponseEntity.status(HttpStatus.CREATED).body(DespesaMapper.toResponse(criada));
+    }
 
-            Despesa despesa = new Despesa();
-            BeanUtils.copyProperties(createDespesaDTO, despesa);
-
-            Despesa criada = despesaService.salvar(despesa, createDespesaDTO.getIdUsuario(), createDespesaDTO.getIdCategoria());
-            
-            DespesaDTO despesaDTO = convertToDespesaDTO(criada);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(despesaDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao criar despesa: " + e.getMessage());
-        }
+    @GetMapping
+    public ResponseEntity<List<DespesaResponse>> listarMinhas() {
+        Long usuarioId = usuarioAutenticadoId();
+        List<DespesaResponse> dtos = despesaService.listar(usuarioId)
+                .stream()
+                .map(DespesaMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<List<DespesaDTO>> listarPorUsuario(@PathVariable Long idUsuario) {
-        try {
-            if (idUsuario <= 0) {
-                throw new IllegalArgumentException("ID do usuário inválido");
-            }
-            List<Despesa> despesas = despesaService.listar(idUsuario);
-            List<DespesaDTO> despesasDTO = despesas.stream()
-                    .map(this::convertToDespesaDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(despesasDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao listar despesas do usuário: " + e.getMessage());
+    public ResponseEntity<List<DespesaResponse>> listarPorUsuario(
+            @PathVariable @Positive(message = "ID do usuário deve ser positivo") Long idUsuario) {
+        Long usuarioId = usuarioAutenticadoId();
+        if (!usuarioId.equals(idUsuario)) {
+            throw new AccessDeniedException("Acesso negado para este recurso");
         }
+        List<DespesaResponse> dtos = despesaService.listar(idUsuario)
+                .stream()
+                .map(DespesaMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DespesaDTO> buscarPorId(@PathVariable Long id) {
-        try {
-            Despesa despesa = despesaService.buscarPorId(id);
-            DespesaDTO despesaDTO = convertToDespesaDTO(despesa);
-            return ResponseEntity.ok(despesaDTO);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao buscar despesa: " + e.getMessage());
-        }
+    public ResponseEntity<DespesaResponse> buscarPorId(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        Long usuarioId = usuarioAutenticadoId();
+        Despesa despesa = despesaService.buscarPorId(id);
+        garantirDono(despesa, usuarioId);
+        return ResponseEntity.ok(DespesaMapper.toResponse(despesa));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DespesaDTO> atualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody CreateDespesaDTO createDespesaDTO) {
-        try {
-            if (createDespesaDTO.getIdUsuario() <= 0) {
-                throw new IllegalArgumentException("ID do usuário inválido");
-            }
-            if (createDespesaDTO.getIdCategoria() <= 0) {
-                throw new IllegalArgumentException("ID da categoria inválido");
-            }
-
-            Despesa despesaAtualizada = new Despesa();
-            BeanUtils.copyProperties(createDespesaDTO, despesaAtualizada);
-
-            Despesa atualizada = despesaService.atualizar(id, despesaAtualizada, createDespesaDTO.getIdUsuario(), createDespesaDTO.getIdCategoria());
-            
-            DespesaDTO despesaDTO = convertToDespesaDTO(atualizada);
-
-            return ResponseEntity.ok(despesaDTO);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao atualizar despesa: " + e.getMessage());
-        }
+    public ResponseEntity<DespesaResponse> atualizar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id,
+            @Valid @RequestBody DespesaRequest dto) {
+        Long usuarioId = usuarioAutenticadoId();
+        garantirDono(despesaService.buscarPorId(id), usuarioId);
+        Despesa atualizada = despesaService.atualizar(id, DespesaMapper.toEntity(dto), usuarioId, dto.idCategoria());
+        return ResponseEntity.ok(DespesaMapper.toResponse(atualizada));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        try {
-            despesaService.deletar(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao deletar despesa: " + e.getMessage());
-        }
-    }
-
-    private DespesaDTO convertToDespesaDTO(Despesa despesa) {
-        DespesaDTO dto = new DespesaDTO();
-        BeanUtils.copyProperties(despesa, dto);
-        dto.setIdUsuario(despesa.getUsuario().getUserId());
-        dto.setTipo(despesa.getTipo());
-
-        if (despesa.getCategoria() != null) {
-            com.financefit.financeFit.dtos.CategoriaDTO categoriaDTO = new com.financefit.financeFit.dtos.CategoriaDTO();
-            categoriaDTO.setCategoriaId(despesa.getCategoria().getCategoriaId());
-            categoriaDTO.setNome(despesa.getCategoria().getNome());
-            dto.setCategoria(categoriaDTO);
-            dto.setIdCategoria(despesa.getCategoria().getCategoriaId());
-        }
-
-        return dto;
+    public ResponseEntity<Void> deletar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        Long usuarioId = usuarioAutenticadoId();
+        garantirDono(despesaService.buscarPorId(id), usuarioId);
+        despesaService.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 }

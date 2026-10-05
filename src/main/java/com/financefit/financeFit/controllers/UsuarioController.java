@@ -1,359 +1,154 @@
 package com.financefit.financeFit.controllers;
 
-
-import com.financefit.financeFit.dtos.*;
-import com.financefit.financeFit.entities.Despesa;
-import com.financefit.financeFit.entities.Receita;
+import com.financefit.financeFit.dtos.request.AlterarSenhaRequest;
+import com.financefit.financeFit.dtos.request.AtualizarMetaRequest;
+import com.financefit.financeFit.dtos.request.UsuarioRequest;
+import com.financefit.financeFit.dtos.request.UsuarioUpdateRequest;
+import com.financefit.financeFit.dtos.response.ResumoFinanceiroResponse;
+import com.financefit.financeFit.dtos.response.UsuarioResponse;
 import com.financefit.financeFit.entities.Usuario;
-import com.financefit.financeFit.services.DespesaService;
-import com.financefit.financeFit.services.ReceitaService;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
+import com.financefit.financeFit.mappers.UsuarioMapper;
 import com.financefit.financeFit.services.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.util.List;
 
 @RestController
 @RequestMapping("/usuarios")
 @Validated
 public class UsuarioController {
 
-    @Autowired
-    private UsuarioService usuarioService;
+    private final UsuarioService usuarioService;
 
-    @Autowired
-    private DespesaService despesaService;
-
-    @Autowired
-    private ReceitaService receitaService;
-
-    public UsuarioController(UsuarioService usuarioService, DespesaService despesaService, ReceitaService receitaService) {
+    public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
-        this.despesaService = despesaService;
-        this.receitaService = receitaService;
+    }
+
+    private String emailAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null
+                || "anonymousUser".equals(auth.getName())) {
+            throw new AccessDeniedException("Usuário não autenticado");
+        }
+        return auth.getName();
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioDTO> criar(@Valid @RequestBody UsuarioDTO dto) {
-        try {
-            Usuario usuario = toEntity(dto);
-            Usuario criado = usuarioService.criarUsuario(usuario);
-            return ResponseEntity.status(HttpStatus.CREATED).body(toDto(criado));
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao criar usuário: " + e.getMessage());
-        }
+    public ResponseEntity<UsuarioResponse> criar(@Valid @RequestBody UsuarioRequest dto) {
+        Usuario criado = usuarioService.criarUsuario(UsuarioMapper.toEntity(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toResponse(criado));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> buscar(@PathVariable Long id) {
-        try {
-            Usuario usuario = usuarioService.buscarPorId(id);
-            return ResponseEntity.ok(toDto(usuario));
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Usuário não encontrado com ID: " + id);
-        }
+    public ResponseEntity<UsuarioResponse> buscar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioService.buscarPorId(id)));
     }
 
     @GetMapping
-    public ResponseEntity<java.util.List<UsuarioDTO>> listarTodos() {
-        try {
-            java.util.List<Usuario> usuarios = usuarioService.listarTodos();
-            java.util.List<UsuarioDTO> dtos = usuarios.stream()
-                    .map(this::toDto)
-                    .collect(java.util.stream.Collectors.toList());
-            return ResponseEntity.ok(dtos);
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao listar usuários: " + e.getMessage());
-        }
+    public ResponseEntity<List<UsuarioResponse>> listarTodos() {
+        List<UsuarioResponse> dtos = usuarioService.listarTodos().stream()
+                .map(UsuarioMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> atualizar(@PathVariable Long id, @Valid @RequestBody UsuarioDTO dto) {
-        try {
-            Usuario dadosAtualizados = toEntity(dto);
-            Usuario atualizado = usuarioService.atualizarUsuario(id, dadosAtualizados);
-            return ResponseEntity.ok(toDto(atualizado));
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Erro ao atualizar usuário com ID " + id + ": " + e.getMessage());
-        }
+    public ResponseEntity<UsuarioResponse> atualizar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id,
+            @Valid @RequestBody UsuarioUpdateRequest dto) {
+        Usuario atualizado = usuarioService.atualizarUsuario(id, UsuarioMapper.toEntity(dto));
+        return ResponseEntity.ok(UsuarioMapper.toResponse(atualizado));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        try {
-            usuarioService.deletarUsuario(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Erro ao deletar usuário com ID " + id + ": " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/email/{email}")
-    public ResponseEntity<UsuarioDTO> buscarPorEmail(@PathVariable String email) {
-        try {
-            return usuarioService.buscarPorEmail(email)
-                    .map(usuario -> ResponseEntity.ok(toDto(usuario)))
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado com email: " + email));
-        } catch (RuntimeException e) {
-            throw e;
-        }
-    }
-
-    @PatchMapping("/{id}/senha")
-    public ResponseEntity<UsuarioDTO> alterarSenha(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
-        try {
-            String novaSenha = body.get("senha");
-            if (novaSenha == null || novaSenha.isEmpty()) {
-                throw new IllegalArgumentException("Senha não pode ser vazia");
-            }
-            Usuario atualizado = usuarioService.alterarSenha(id, novaSenha);
-            return ResponseEntity.ok(toDto(atualizado));
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Erro ao alterar senha do usuário com ID " + id + ": " + e.getMessage());
-        }
-    }
-
-    @PatchMapping("/{id}/meta")
-    public ResponseEntity<UsuarioDTO> atualizarMeta(@PathVariable Long id, @RequestBody java.util.Map<String, Double> body) {
-        try {
-            Double novaMeta = body.get("metaMensal");
-            if (novaMeta == null || novaMeta < 0) {
-                throw new IllegalArgumentException("Meta mensal deve ser maior ou igual a zero");
-            }
-            Usuario atualizado = usuarioService.atualizarMeta(id, novaMeta);
-            return ResponseEntity.ok(toDto(atualizado));
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Erro ao atualizar meta do usuário com ID " + id + ": " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/resumo")
-    public ResponseEntity<java.util.Map<String, Object>> resumoFinanceiro(@PathVariable Long id) {
-        try {
-            java.util.Map<String, Object> resumo = usuarioService.resumoFinanceiro(id);
-            return ResponseEntity.ok(resumo);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Erro ao buscar resumo financeiro do usuário com ID " + id + ": " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/resumo/{mes}/{ano}")
-    public ResponseEntity<java.util.Map<String, Object>> resumoFinanceiroPeriodo(
-            @PathVariable Long id,
-            @PathVariable Integer mes,
-            @PathVariable Integer ano) {
-        try {
-            if (mes < 1 || mes > 12) {
-                throw new IllegalArgumentException("Mês deve estar entre 1 e 12");
-            }
-            if (ano < 2000 || ano > 2100) {
-                throw new IllegalArgumentException("Ano inválido");
-            }
-            java.util.Map<String, Object> resumo = usuarioService.resumoFinanceiro(id, mes, ano);
-            return ResponseEntity.ok(resumo);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Erro ao buscar resumo financeiro: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/despesas")
-    public ResponseEntity<java.util.List<DespesaDTO>> listarDespesasPorUsuario(@PathVariable Long id) {
-        try {
-            java.util.List<Despesa> despesas = despesaService.listar(id);
-            java.util.List<DespesaDTO> despesasDTO = despesas.stream()
-                    .map(this::convertToDespesaDTO)
-                    .collect(java.util.stream.Collectors.toList());
-            return ResponseEntity.ok(despesasDTO);
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao listar despesas do usuário com ID " + id + ": " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/receitas")
-    public ResponseEntity<java.util.List<ReceitaDTO>> listarReceitasPorUsuario(@PathVariable Long id) {
-        try {
-            java.util.List<Receita> receitas = receitaService.listar(id);
-            java.util.List<ReceitaDTO> receitasDTO = receitas.stream()
-                    .map(this::convertToReceitaDTO)
-                    .collect(java.util.stream.Collectors.toList());
-            return ResponseEntity.ok(receitasDTO);
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao listar receitas do usuário com ID " + id + ": " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/{id}/despesas")
-    public ResponseEntity<DespesaDTO> criarDespesa(
-            @PathVariable Long id,
-            @Valid @RequestBody CreateDespesaDTO createDespesaDTO) {
-        try {
-            // Validar que o ID do path corresponde ao ID do body
-            if (createDespesaDTO.getIdUsuario() != null && createDespesaDTO.getIdUsuario() != id) {
-                throw new IllegalArgumentException("ID do usuário no path não corresponde ao ID no corpo da requisição");
-            }
-
-            // Garantir que o ID do usuário seja o do path
-            createDespesaDTO.setIdUsuario(id);
-
-            if (createDespesaDTO.getIdCategoria() <= 0) {
-                throw new IllegalArgumentException("ID da categoria inválido");
-            }
-
-            Despesa despesa = new Despesa();
-            BeanUtils.copyProperties(createDespesaDTO, despesa);
-
-            Despesa criada = despesaService.salvar(despesa, id, createDespesaDTO.getIdCategoria());
-
-            DespesaDTO despesaDTO = convertToDespesaDTO(criada);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(despesaDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao criar despesa: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/{id}/receitas")
-    public ResponseEntity<ReceitaDTO> criarReceita(
-            @PathVariable Long id,
-            @Valid @RequestBody CreateReceitaDTO createReceitaDTO) {
-        try {
-            // Validar que o ID do path corresponde ao ID do body
-            if (createReceitaDTO.getIdUsuario() != null && createReceitaDTO.getIdUsuario() != id) {
-                throw new IllegalArgumentException("ID do usuário no path não corresponde ao ID no corpo da requisição");
-            }
-
-            // Garantir que o ID do usuário seja o do path
-            createReceitaDTO.setIdUsuario(id);
-
-            if (createReceitaDTO.getIdCategoria() == null || createReceitaDTO.getIdCategoria() <= 0) {
-                throw new IllegalArgumentException("ID da categoria inválido");
-            }
-
-            Receita receita = new Receita();
-            BeanUtils.copyProperties(createReceitaDTO, receita);
-
-            Receita criada = receitaService.salvar(receita, id, createReceitaDTO.getIdCategoria());
-
-            ReceitaDTO receitaDTO = convertToReceitaDTO(criada);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(receitaDTO);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao criar receita: " + e.getMessage());
-        }
-    }
-
-    // Endpoint para obter dados do usuário autenticado
-    @GetMapping("/me")
-    public ResponseEntity<UsuarioDTO> me() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String email = auth.getName();
-        Usuario usuario = usuarioService.buscarPorEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        return ResponseEntity.ok(toDto(usuario));
-    }
-
-    // Endpoint para atualizar parcialmente dados do usuário autenticado
-    @PatchMapping("/me")
-    public ResponseEntity<UsuarioDTO> atualizarMe(@RequestBody UpdateUsuarioDTO update) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String email = auth.getName();
-        Usuario atualizado = usuarioService.atualizarUsuarioPorEmail(email, update.getNome(), update.getSenha(), update.getMetaMensal());
-        return ResponseEntity.ok(toDto(atualizado));
-    }
-
-    // Endpoint para deletar a própria conta
-    @DeleteMapping("/me")
-    public ResponseEntity<Void> deletarMe() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String email = auth.getName();
-        usuarioService.deletarUsuarioPorEmail(email);
+    public ResponseEntity<Void> deletar(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        usuarioService.deletarUsuario(id);
         return ResponseEntity.noContent().build();
     }
 
-    private Usuario toEntity(UsuarioDTO dto) {
-        Usuario u = new Usuario();
-        if (dto.getId() != null) {
-            u.setUserId(dto.getId());
-        }
-        u.setNome(dto.getNome());
-        u.setEmail(dto.getEmail());
-        u.setSenha(dto.getSenha());
-        if (dto.getDataCriacao() != null) {
-            u.setDataCriacao(dto.getDataCriacao());
-        }
-        if (dto.getMetaMensal() != null) {
-            u.setMetaMensal(dto.getMetaMensal());
-        }
-        return u;
+    @GetMapping("/email/{email}")
+    public ResponseEntity<UsuarioResponse> buscarPorEmail(@PathVariable String email) {
+        Usuario usuario = usuarioService.buscarPorEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com email: " + email));
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuario));
     }
 
-    private UsuarioDTO toDto(Usuario usuario) {
-        UsuarioDTO dto = new UsuarioDTO();
-        dto.setId(usuario.getUserId());
-        dto.setNome(usuario.getNome());
-        dto.setEmail(usuario.getEmail());
-        dto.setDataCriacao(usuario.getDataCriacao());
-        dto.setMetaMensal(usuario.getMetaMensal());
-        // não retornar senha em respostas
-        return dto;
+    @PatchMapping("/{id}/senha")
+    public ResponseEntity<UsuarioResponse> alterarSenha(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id,
+            @Valid @RequestBody AlterarSenhaRequest body) {
+        Usuario atualizado = usuarioService.alterarSenha(id, body.novaSenha());
+        return ResponseEntity.ok(UsuarioMapper.toResponse(atualizado));
     }
 
-    private DespesaDTO convertToDespesaDTO(Despesa despesa) {
-        DespesaDTO dto = new DespesaDTO();
-        BeanUtils.copyProperties(despesa, dto);
-        dto.setIdUsuario(despesa.getUsuario().getUserId());
-        dto.setTipo(despesa.getTipo());
-
-        if (despesa.getCategoria() != null) {
-            CategoriaDTO categoriaDTO = new CategoriaDTO();
-            categoriaDTO.setCategoriaId(despesa.getCategoria().getCategoriaId());
-            categoriaDTO.setNome(despesa.getCategoria().getNome());
-            dto.setCategoria(categoriaDTO);
-            dto.setIdCategoria(despesa.getCategoria().getCategoriaId());
-        }
-
-        return dto;
+    @PatchMapping("/{id}/meta")
+    public ResponseEntity<UsuarioResponse> atualizarMeta(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id,
+            @Valid @RequestBody AtualizarMetaRequest body) {
+        Usuario atualizado = usuarioService.atualizarMeta(id, body.metaMensal());
+        return ResponseEntity.ok(UsuarioMapper.toResponse(atualizado));
     }
 
-    private ReceitaDTO convertToReceitaDTO(Receita receita) {
-        ReceitaDTO dto = new ReceitaDTO();
-        BeanUtils.copyProperties(receita, dto);
-        dto.setIdUsuario(receita.getUsuario().getUserId());
-        dto.setTipo(receita.getTipo());
+    @GetMapping("/{id}/resumo")
+    public ResponseEntity<ResumoFinanceiroResponse> resumoFinanceiro(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id) {
+        return ResponseEntity.ok(usuarioService.resumoFinanceiroDetalhado(id));
+    }
 
-        if (receita.getCategoria() != null) {
-            CategoriaDTO categoriaDTO = new CategoriaDTO();
-            categoriaDTO.setCategoriaId(receita.getCategoria().getCategoriaId());
-            categoriaDTO.setNome(receita.getCategoria().getNome());
-            dto.setCategoria(categoriaDTO);
-            dto.setIdCategoria(receita.getCategoria().getCategoriaId());
-        }
+    @GetMapping("/{id}/resumo/{mes}/{ano}")
+    public ResponseEntity<ResumoFinanceiroResponse> resumoFinanceiroPeriodo(
+            @PathVariable @Positive(message = "ID deve ser positivo") Long id,
+            @PathVariable @Min(value = 1, message = "Mês deve estar entre 1 e 12")
+            @Max(value = 12, message = "Mês deve estar entre 1 e 12") Integer mes,
+            @PathVariable @Min(value = 2000, message = "Ano inválido")
+            @Max(value = 2100, message = "Ano inválido") Integer ano) {
+        return ResponseEntity.ok(usuarioService.resumoFinanceiroDetalhado(id, mes, ano));
+    }
 
-        return dto;
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponse> me() {
+        String email = emailAutenticado();
+        Usuario usuario = usuarioService.buscarPorEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com email: " + email));
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuario));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UsuarioResponse> atualizarMePut(
+            @Valid @RequestBody UsuarioUpdateRequest update) {
+        return processarAtualizarMe(update);
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<UsuarioResponse> atualizarMePatch(
+            @RequestBody UsuarioUpdateRequest update) {
+        return processarAtualizarMe(update);
+    }
+
+    private ResponseEntity<UsuarioResponse> processarAtualizarMe(UsuarioUpdateRequest update) {
+        String email = emailAutenticado();
+        Usuario atualizado = usuarioService.atualizarUsuarioPorEmail(
+                email, update.nome(), update.senha(), update.metaMensal());
+        return ResponseEntity.ok(UsuarioMapper.toResponse(atualizado));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deletarMe() {
+        String email = emailAutenticado();
+        usuarioService.deletarUsuarioPorEmail(email);
+        return ResponseEntity.noContent().build();
     }
 }

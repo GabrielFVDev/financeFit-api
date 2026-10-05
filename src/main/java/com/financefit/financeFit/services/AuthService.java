@@ -4,9 +4,10 @@ import com.financefit.financeFit.dtos.AuthResponseDTO;
 import com.financefit.financeFit.dtos.LoginDTO;
 import com.financefit.financeFit.dtos.RegisterDTO;
 import com.financefit.financeFit.entities.Usuario;
+import com.financefit.financeFit.exception.BusinessException;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
 import com.financefit.financeFit.repositories.UsuarioRepository;
 import com.financefit.financeFit.security.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,44 +15,46 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 @Service
 public class AuthService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public AuthService(UsuarioRepository usuarioRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil,
+                       AuthenticationManager authenticationManager,
+                       UserDetailsService userDetailsService) {
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+    }
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserDetailsService userDetailsService;
-
+    @Transactional
     public AuthResponseDTO register(RegisterDTO registerDTO) {
-        // Verificar se o email já existe
-        if (usuarioRepository.findByEmail(registerDTO.getEmail()).isPresent()) {
-            throw new RuntimeException("Email já cadastrado");
+        if (usuarioRepository.findByEmail(registerDTO.email()).isPresent()) {
+            throw new BusinessException("Email já cadastrado: " + registerDTO.email());
         }
 
-        // Criar novo usuário
         Usuario usuario = new Usuario();
-        usuario.setNome(registerDTO.getNome());
-        usuario.setEmail(registerDTO.getEmail());
-        usuario.setSenha(passwordEncoder.encode(registerDTO.getSenha()));
+        usuario.setNome(registerDTO.nome());
+        usuario.setEmail(registerDTO.email());
+        usuario.setSenha(passwordEncoder.encode(registerDTO.senha()));
         usuario.setDataCriacao(LocalDate.now());
-        usuario.setMetaMensal(registerDTO.getMetaMensal());
+        usuario.setMetaMensal(registerDTO.metaMensal() != null ? registerDTO.metaMensal() : 0.0);
 
         usuarioRepository.save(usuario);
 
-        // Gerar token
         UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
         String token = jwtUtil.generateToken(userDetails);
 
@@ -59,20 +62,16 @@ public class AuthService {
     }
 
     public AuthResponseDTO login(LoginDTO loginDTO) {
-        // Autenticar usuário
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getSenha())
+                new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.senha())
         );
 
-        // Buscar usuário
-        Usuario usuario = usuarioRepository.findByEmail(loginDTO.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        Usuario usuario = usuarioRepository.findByEmail(loginDTO.email())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com email: " + loginDTO.email()));
 
-        // Gerar token
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtUtil.generateToken(userDetails);
 
         return new AuthResponseDTO(token, usuario.getEmail(), usuario.getNome());
     }
 }
-

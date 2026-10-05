@@ -3,6 +3,7 @@ package com.financefit.financeFit.services;
 import com.financefit.financeFit.entities.Categoria;
 import com.financefit.financeFit.entities.Despesa;
 import com.financefit.financeFit.entities.Usuario;
+import com.financefit.financeFit.exception.ResourceNotFoundException;
 import com.financefit.financeFit.repositories.DespesaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,15 +57,12 @@ class DespesaServiceTest {
 
     @Test
     void deveSalvarDespesaComSucesso() {
-        // Given
         when(usuarioService.buscarPorId(1L)).thenReturn(usuario);
-        when(categoriaService.listarTodas()).thenReturn(java.util.List.of(categoria));
+        when(categoriaService.buscarPorId(1L)).thenReturn(categoria);
         when(despesaRepository.save(any(Despesa.class))).thenReturn(despesa);
 
-        // When
         Despesa resultado = despesaService.salvar(despesa, 1L, 1L);
 
-        // Then
         assertNotNull(resultado);
         assertEquals(new BigDecimal("100.00"), resultado.getValor());
         verify(despesaRepository).save(any(Despesa.class));
@@ -72,24 +70,18 @@ class DespesaServiceTest {
 
     @Test
     void deveBuscarDespesaPorId() {
-        // Given
         when(despesaRepository.findById(1L)).thenReturn(Optional.of(despesa));
 
-        // When
         Despesa resultado = despesaService.buscarPorId(1L);
 
-        // Then
         assertNotNull(resultado);
         assertEquals(1L, resultado.getId());
     }
 
     @Test
     void deveLancarExcecaoQuandoDespesaNaoEncontrada() {
-        // Given
         when(despesaRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> despesaService.buscarPorId(999L));
+        assertThrows(ResourceNotFoundException.class, () -> despesaService.buscarPorId(999L));
     }
 }
-
